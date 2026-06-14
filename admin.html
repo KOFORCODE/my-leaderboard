@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Comboo 500</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg0:#0b0d12;--bg1:#10131a;--bg2:#171b25;--bg3:#1e2330;
+  --text1:#eceef4;--text2:#8b91a8;--text3:#4a5068;
+  --accent:#e8b84b;--border:#ffffff0c;--border2:#ffffff18;
+  --red:#ff4d6d;--green:#00d4aa;
+}
+body{background:var(--bg0);color:var(--text1);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* LOGIN */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.login-card{background:var(--bg1);border:1px solid var(--border2);border-radius:16px;padding:2.5rem;width:100%;max-width:360px;text-align:center}
+.login-card h1{font-size:1.2rem;margin-bottom:6px}
+.login-card p{color:var(--text3);font-size:0.85rem;margin-bottom:2rem}
+.login-card input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:11px 14px;color:var(--text1);font-size:0.95rem;outline:none;margin-bottom:12px;text-align:center;letter-spacing:0.15em}
+.login-card input:focus{border-color:#e8b84b55}
+.btn-login{width:100%;background:var(--accent);color:#000;border:none;border-radius:8px;padding:11px;font-size:0.9rem;font-weight:700;cursor:pointer}
+.login-err{color:var(--red);font-size:0.82rem;margin-top:10px;display:none}
+
+/* APP */
+#app{display:none}
+nav{background:var(--bg1);border-bottom:1px solid var(--border);height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:50}
+.logo{font-size:1rem;font-weight:700}.logo span{color:var(--accent)}
+.badge-admin{background:#e8b84b22;color:var(--accent);border:1px solid #e8b84b33;padding:3px 10px;border-radius:5px;font-size:0.72rem;font-weight:700}
+.btn-logout{background:none;border:1px solid var(--border2);color:var(--text3);padding:5px 12px;border-radius:7px;font-size:0.8rem;cursor:pointer}
+.btn-logout:hover{color:var(--text1)}
+
+main{max-width:1000px;margin:0 auto;padding:1.5rem}
+
+/* TABS */
+.admin-tabs{display:flex;gap:4px;margin-bottom:1.5rem;background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:6px}
+.atab{flex:1;padding:8px;border:none;background:none;color:var(--text3);border-radius:7px;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all .2s}
+.atab.active{background:var(--bg3);color:var(--text1)}
+
+/* CARD */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1rem}
+.card-title{font-size:0.88rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1.25rem}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-full{grid-column:1/-1}
+label{display:block;font-size:0.75rem;color:var(--text3);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em}
+input[type=text],input[type=url],select,textarea{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text1);font-size:0.88rem;outline:none;transition:border .2s;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:#e8b84b55}
+select option{background:var(--bg2)}
+textarea{resize:vertical;min-height:80px}
+
+.btn{padding:8px 18px;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{opacity:.85}
+.btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--bg2);color:var(--text1)}
+.btn-red{background:#ff4d6d18;border:1px solid #ff4d6d33;color:#ff6b88}
+.btn-red:hover{background:#ff4d6d28}
+.btn-green{background:#00d4aa18;border:1px solid #00d4aa33;color:#00d4aa}
+
+/* PLAYER LIST */
+.player-list{display:flex;flex-direction:column;gap:6px}
+.p-item{display:flex;align-items:center;gap:12px;background:var(--bg2);border-radius:8px;padding:10px 14px}
+.p-item-avatar{width:36px;height:36px;border-radius:7px;background:var(--bg3);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text3)}
+.p-item-avatar img{width:100%;height:100%;object-fit:cover}
+.p-item-info{flex:1;min-width:0}
+.p-item-name{font-size:0.9rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.p-item-meta{font-size:0.75rem;color:var(--text3);margin-top:2px}
+.p-item-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* TIER SELECT */
+.tier-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px;margin-top:6px}
+.tier-opt{padding:7px;border-radius:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);font-size:0.82rem;font-weight:700;cursor:pointer;text-align:center;transition:all .2s}
+.tier-opt:hover{border-color:var(--accent);color:var(--accent)}
+.tier-opt.selected{border-color:var(--accent);background:#e8b84b18;color:var(--accent)}
+
+/* IMG PREVIEW */
+.img-preview{width:80px;height:80px;border-radius:10px;background:var(--bg2);border:1px solid var(--border2);overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:1.5rem}
+.img-preview img{width:100%;height:100%;object-fit:cover}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--bg1);border:1px solid var(--border2);border-radius:10px;padding:12px 18px;font-size:0.88rem;display:none;z-index:999;box-shadow:0 4px 20px #00000088}
+.toast.show{display:block}
+.toast.ok{border-color:#00d4aa44;color:#00d4aa}
+.toast.err{border-color:#ff4d6d44;color:#ff6b88}
+
+/* SECTION TABS */
+.section{display:none}.section.active{display:block}
+
+.mode-item{display:flex;align-items:center;gap:10px;background:var(--bg2);border-radius:8px;padding:10px 14px;margin-bottom:6px}
+
+@media(max-width:600px){
+  .form-grid{grid-template-columns:1fr}
+  main{padding:1rem}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>🔐 Admin Panel</h1>
+    <p>Comboo 500 Tier List</p>
+    <input type="password" id="pwInput" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-login" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <div class="login-err" id="loginErr">รหัสผ่านไม่ถูกต้อง</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<nav>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="logo"><span>Comboo</span> 500 Admin</div>
+    <span class="badge-admin">ADMIN</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <a href="/" style="color:var(--text3);font-size:0.8rem;text-decoration:none">← ดูหน้าเว็บ</a>
+    <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+  </div>
+</nav>
+
+<main>
+  <div class="admin-tabs">
+    <button class="atab active" onclick="switchTab('players')">👤 ผู้เล่น</button>
+    <button class="atab" onclick="switchTab('modes')">🎮 Game Mode</button>
+  </div>
+
+  <!-- PLAYERS SECTION -->
+  <div class="section active" id="sec-players">
+
+    <!-- ADD/EDIT FORM -->
+    <div class="card">
+      <div class="card-title" id="formLabel">➕ เพิ่มผู้เล่น</div>
+      <div class="form-grid">
+        <div>
+          <label>ชื่อผู้เล่น *</label>
+          <input type="text" id="f_name" placeholder="ชื่อ">
+        </div>
+        <div>
+          <label>ภูมิภาค</label>
+          <select id="f_region">
+            <option value="TH">TH — Thailand</option>
+            <option value="AS">AS — Asia</option>
+            <option value="EU">EU — Europe</option>
+            <option value="NA">NA — North America</option>
+          </select>
+        </div>
+        <div>
+          <label>Badge / ตำแหน่ง (ไม่บังคับ)</label>
+          <input type="text" id="f_badge" placeholder="เช่น Pro Player, Staff">
+        </div>
+        <div>
+          <label>URL รูปภาพ</label>
+          <input type="url" id="f_avatar" placeholder="https://..." oninput="previewImg()">
+        </div>
+        <div class="form-full">
+          <label>Preview รูป</label>
+          <div class="img-preview" id="imgPreview">🖼️</div>
+        </div>
+        <div class="form-full">
+          <label>Tier (ลีคตัว)</label>
+          <div class="tier-grid" id="tierGrid"></div>
+          <input type="hidden" id="f_tier">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-primary" onclick="savePlayer()">💾 บันทึก</button>
+        <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">ยกเลิก</button>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="card">
+      <div class="card-title">รายชื่อผู้เล่นทั้งหมด</div>
+      <div class="player-list" id="playerList"><div style="color:var(--text3);text-align:center;padding:2rem;font-size:0.88rem">กำลังโหลด...</div></div>
+    </div>
+  </div>
+
+  <!-- MODES SECTION -->
+  <div class="section" id="sec-modes">
+    <div class="card">
+      <div class="card-title">Game Mode ปัจจุบัน</div>
+      <div id="modeList"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">➕ เพิ่ม Game Mode</div>
+      <div class="form-grid">
+        <div><label>ชื่อ Mode</label><input type="text" id="m_name" placeholder="เช่น Sword, Bow"></div>
+        <div><label>Icon (Emoji)</label><input type="text" id="m_icon" placeholder="⚔️"></div>
+        <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:4px">
+          <input type="checkbox" id="m_overall" style="width:16px;height:16px;cursor:pointer">
+          <label style="margin:0;text-transform:none;font-size:0.85rem;font-weight:500;cursor:pointer;color:var(--text2)" for="m_overall">นับรวมใน Overall</label>
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px" onclick="addMode()">เพิ่ม Mode</button>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://qfdtnfhcdxucckxakrgu.supabase.co/rest/v1/';
+const SUPABASE_SERVICE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmZHRuZmhjZHh1Y2NreGFrcmd1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTM2NjU4OCwiZXhwIjoyMDk2OTQyNTg4fQ.VXmpAen5YodU0sokfmnIy36D_-CrcXXEEggtLlW49bI';
+const ADMIN_PW = '@#$4A68723423';
+
+const TIERS = ['S','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
+
+let editId = null;
+let modes = [], players = [], allTiers = [];
+let activeModeId = null;
+
+// AUTH
+function doLogin(){
+  const pw = document.getElementById('pwInput').value;
+  if(pw === ADMIN_PW){
+    sessionStorage.setItem('admin_ok','1');
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').style.display='block';
+    init();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+    document.getElementById('pwInput').value='';
+  }
+}
+
+function logout(){
+  sessionStorage.removeItem('admin_ok');
+  location.reload();
+}
+
+if(sessionStorage.getItem('admin_ok')==='1'){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+}
+
+// API
+async function api(path, method='GET', body=null){
+  const opts = {
+    method,
+    headers:{
+      'apikey':SUPABASE_SERVICE,
+      'Authorization':'Bearer '+SUPABASE_SERVICE,
+      'Content-Type':'application/json',
+      'Prefer': method==='POST'?'return=representation':'return=minimal'
+    }
+  };
+  if(body) opts.body=JSON.stringify(body);
+  const r = await fetch(SUPABASE_URL+path, opts);
+  if(r.status===204||r.status===200||r.status===201) {
+    const t=await r.text();
+    return t?JSON.parse(t):null;
+  }
+  throw new Error(await r.text());
+}
+
+function toast(msg,ok=true){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast show '+(ok?'ok':'err');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// TABS
+function switchTab(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.atab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if(name==='modes') renderModes();
+}
+
+// TIER GRID
+function buildTierGrid(selected=''){
+  document.getElementById('tierGrid').innerHTML=TIERS.map(t=>`
+    <div class="tier-opt${t===selected?' selected':''}" onclick="selectTier('${t}')">${t}</div>
+  `).join('');
+  document.getElementById('f_tier').value=selected;
+}
+
+function selectTier(t){
+  document.querySelectorAll('.tier-opt').forEach(el=>{
+    el.classList.toggle('selected', el.textContent===t);
+  });
+  document.getElementById('f_tier').value=t;
+}
+
+// IMG PREVIEW
+function previewImg(){
+  const url=document.getElementById('f_avatar').value.trim();
+  const el=document.getElementById('imgPreview');
+  if(url){el.innerHTML=`<img src="${url}" onerror="this.parentElement.innerHTML='❌'">`}
+  else{el.innerHTML='🖼️'}
+}
+
+// INIT
+async function init(){
+  buildTierGrid();
+  [modes, players, allTiers] = await Promise.all([
+    api('modes?order=sort_order'),
+    api('players?order=name'),
+    api('player_tiers?select=*')
+  ]);
+  if(modes.length) activeModeId=modes[0].id;
+  renderPlayerList();
+}
+
+// PLAYERS
+function renderPlayerList(){
+  const el=document.getElementById('playerList');
+  if(!players.length){
+    el.innerHTML='<div style="color:var(--text3);text-align:center;padding:2rem;font-size:0.88rem">ยังไม่มีผู้เล่น</div>';
+    return;
+  }
+  el.innerHTML=players.map(p=>{
+    const pt=allTiers.filter(t=>t.player_id===p.id);
+    const tierStr=pt.length?pt.map(t=>{const m=modes.find(x=>x.id===t.mode_id);return(m?m.name:'?')+': '+t.tier_type}).join(', '):'ยังไม่มี tier';
+    const av=p.avatar?`<img src="${p.avatar}" onerror="this.style.display='none'">`:(p.name[0]||'?').toUpperCase();
+    return`<div class="p-item">
+      <div class="p-item-avatar">${p.avatar?`<img src="${p.avatar}" onerror="this.style.display='none'">`:''}${!p.avatar?(p.name[0]||'?').toUpperCase():''}</div>
+      <div class="p-item-info">
+        <div class="p-item-name">${p.name}${p.badge?` <span style="font-size:0.7rem;color:var(--accent);background:#e8b84b12;border:1px solid #e8b84b25;padding:1px 6px;border-radius:4px">${p.badge}</span>`:''}</div>
+        <div class="p-item-meta">${p.region||'TH'} · ${tierStr}</div>
+      </div>
+      <div class="p-item-actions">
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:0.78rem" onclick="editPlayer('${p.id}')">แก้ไข</button>
+        <button class="btn btn-red" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer('${p.id}')">ลบ</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function savePlayer(){
+  const name=document.getElementById('f_name').value.trim();
+  if(!name){toast('กรุณาใส่ชื่อผู้เล่น',false);return}
+  const tier=document.getElementById('f_tier').value;
+  const body={
+    name,
+    region:document.getElementById('f_region').value,
+    badge:document.getElementById('f_badge').value.trim()||null,
+    avatar:document.getElementById('f_avatar').value.trim()||null,
+  };
+
+  try{
+    let pid=editId;
+    if(editId){
+      await api(`players?id=eq.${editId}`, 'PATCH', body);
+    } else {
+      const res=await api('players', 'POST', body);
+      pid=res[0].id;
+    }
+
+    // update tier
+    if(tier && activeModeId){
+      const existing=allTiers.find(t=>t.player_id===pid&&t.mode_id===activeModeId);
+      if(existing){
+        await api(`player_tiers?id=eq.${existing.id}`, 'PATCH', {tier_type:tier});
+      } else {
+        await api('player_tiers', 'POST', {player_id:pid, mode_id:activeModeId, tier_type:tier});
+      }
+    }
+
+    toast(editId?'✅ แก้ไขสำเร็จ':'✅ เพิ่มผู้เล่นสำเร็จ');
+    cancelEdit();
+    [players, allTiers]=await Promise.all([api('players?order=name'),api('player_tiers?select=*')]);
+    renderPlayerList();
+  } catch(e){toast('เกิดข้อผิดพลาด: '+e.message,false)}
+}
+
+function editPlayer(id){
+  const p=players.find(x=>x.id===id);
+  if(!p)return;
+  editId=id;
+  document.getElementById('f_name').value=p.name;
+  document.getElementById('f_region').value=p.region||'TH';
+  document.getElementById('f_badge').value=p.badge||'';
+  document.getElementById('f_avatar').value=p.avatar||'';
+  previewImg();
+  const pt=allTiers.find(t=>t.player_id===id&&t.mode_id===activeModeId);
+  buildTierGrid(pt?.tier_type||'');
+  document.getElementById('formLabel').textContent='✏️ แก้ไข: '+p.name;
+  document.getElementById('cancelBtn').style.display='';
+  document.getElementById('f_name').scrollIntoView({behavior:'smooth'});
+}
+
+async function deletePlayer(id){
+  if(!confirm('ลบผู้เล่นนี้?'))return;
+  try{
+    await api(`players?id=eq.${id}`,'DELETE');
+    toast('ลบแล้ว');
+    players=players.filter(p=>p.id!==id);
+    allTiers=allTiers.filter(t=>t.player_id!==id);
+    renderPlayerList();
+  } catch(e){toast('เกิดข้อผิดพลาด',false)}
+}
+
+function cancelEdit(){
+  editId=null;
+  document.getElementById('f_name').value='';
+  document.getElementById('f_badge').value='';
+  document.getElementById('f_avatar').value='';
+  document.getElementById('imgPreview').innerHTML='🖼️';
+  buildTierGrid();
+  document.getElementById('formLabel').textContent='➕ เพิ่มผู้เล่น';
+  document.getElementById('cancelBtn').style.display='none';
+}
+
+// MODES
+function renderModes(){
+  document.getElementById('modeList').innerHTML=modes.length
+    ?modes.map(m=>`<div class="mode-item">
+      <span style="font-size:1.3rem">${m.icon||'🎮'}</span>
+      <span style="flex:1;font-weight:600">${m.name}</span>
+      <span style="font-size:0.72rem;padding:2px 8px;border-radius:4px;margin-right:8px;${m.include_in_overall?'background:#00d4aa18;color:#00d4aa;border:1px solid #00d4aa30':'background:#ffffff08;color:var(--text3);border:1px solid var(--border2)'}">${m.include_in_overall?'✓ Overall':'ไม่นับ Overall'}</span>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.78rem;margin-right:6px" onclick="toggleOverall(${m.id},${!m.include_in_overall})">${m.include_in_overall?'ปิด Overall':'เปิด Overall'}</button>
+      <button class="btn btn-red" style="padding:4px 10px;font-size:0.78rem" onclick="deleteMode(${m.id})">ลบ</button>
+    </div>`).join('')
+    :'<div style="color:var(--text3);font-size:0.85rem">ยังไม่มี mode</div>';
+}
+
+async function toggleOverall(id, val){
+  try{
+    await api(`modes?id=eq.${id}`,'PATCH',{include_in_overall:val});
+    modes=await api('modes?order=sort_order');
+    renderModes();
+    toast(val?'✅ เปิด Overall แล้ว':'ปิด Overall แล้ว');
+  }catch(e){toast('เกิดข้อผิดพลาด',false)}
+}
+
+async function addMode(){
+  const name=document.getElementById('m_name').value.trim();
+  const icon=document.getElementById('m_icon').value.trim();
+  const include_in_overall=document.getElementById('m_overall').checked;
+  if(!name){toast('กรุณาใส่ชื่อ mode',false);return}
+  try{
+    await api('modes','POST',{name,icon:icon||'🎮',sort_order:modes.length,include_in_overall});
+    toast('✅ เพิ่ม mode สำเร็จ');
+    document.getElementById('m_name').value='';
+    document.getElementById('m_icon').value='';
+    document.getElementById('m_overall').checked=false;
+    modes=await api('modes?order=sort_order');
+    if(!activeModeId&&modes.length) activeModeId=modes[0].id;
+    renderModes();
+  } catch(e){toast('เกิดข้อผิดพลาด',false)}
+}
+
+async function deleteMode(id){
+  if(!confirm('ลบ mode นี้? ข้อมูล tier ทั้งหมดใน mode นี้จะหายไปด้วย'))return;
+  try{
+    await api(`modes?id=eq.${id}`,'DELETE');
+    modes=modes.filter(m=>m.id!==id);
+    if(activeModeId===id) activeModeId=modes[0]?.id||null;
+    toast('ลบแล้ว');
+    renderModes();
+  } catch(e){toast('เกิดข้อผิดพลาด',false)}
+}
+
+// check session
+if(sessionStorage.getItem('admin_ok')==='1') init();
+</script>
+</body>
+</html>
