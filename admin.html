@@ -163,6 +163,10 @@ textarea{resize:vertical;min-height:80px}
           <div class="img-preview" id="imgPreview">🖼️</div>
         </div>
         <div class="form-full">
+          <label>Game Mode ที่ต้องการให้ Tier</label>
+          <select id="f_mode" onchange="onModeChange()"></select>
+        </div>
+        <div class="form-full">
           <label>Tier (ลีคตัว)</label>
           <div class="tier-grid" id="tierGrid"></div>
           <input type="hidden" id="f_tier">
@@ -192,6 +196,10 @@ textarea{resize:vertical;min-height:80px}
       <div class="form-grid">
         <div><label>ชื่อ Mode</label><input type="text" id="m_name" placeholder="เช่น Sword, Bow"></div>
         <div><label>Icon (Emoji)</label><input type="text" id="m_icon" placeholder="⚔️"></div>
+        <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;margin-top:4px">
+          <input type="checkbox" id="m_overall" style="width:16px;height:16px;cursor:pointer">
+          <label style="margin:0;text-transform:none;font-size:0.85rem;font-weight:500;cursor:pointer;color:var(--text2)" for="m_overall">นับรวมใน Overall</label>
+        </div>
       </div>
       <button class="btn btn-primary" style="margin-top:12px" onclick="addMode()">เพิ่ม Mode</button>
     </div>
@@ -203,12 +211,11 @@ textarea{resize:vertical;min-height:80px}
 <div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmZHRuZmhjZHh1Y2NreGFrcmd1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzNjY1ODgsImV4cCI6MjA5Njk0MjU4OH0.7GpvmHdssndqwu1LAe4YhBAQoPrW7olw1u7CBAIC46g
-';
+const SUPABASE_URL = 'https://qfdtnfhcdxucckxakrgu.supabase.co/rest/v1/';
 const SUPABASE_SERVICE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFmZHRuZmhjZHh1Y2NreGFrcmd1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTM2NjU4OCwiZXhwIjoyMDk2OTQyNTg4fQ.VXmpAen5YodU0sokfmnIy36D_-CrcXXEEggtLlW49bI';
 const ADMIN_PW = '@#$4A68723423';
 
-const TIERS = ['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
+const TIERS = ['S','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
 
 let editId = null;
 let modes = [], players = [], allTiers = [];
@@ -250,7 +257,7 @@ async function api(path, method='GET', body=null){
     }
   };
   if(body) opts.body=JSON.stringify(body);
-  const r = await fetch(SUPABASE_URL+'/rest/v1/'+path, opts);
+  const r = await fetch(SUPABASE_URL+path, opts);
   if(r.status===204||r.status===200||r.status===201) {
     const t=await r.text();
     return t?JSON.parse(t):null;
@@ -306,7 +313,25 @@ async function init(){
     api('player_tiers?select=*')
   ]);
   if(modes.length) activeModeId=modes[0].id;
+  buildModeSelect();
   renderPlayerList();
+}
+
+function buildModeSelect(selectedModeId=null){
+  const sel = document.getElementById('f_mode');
+  sel.innerHTML = modes.map(m=>`<option value="${m.id}" ${m.id===(selectedModeId||activeModeId)?'selected':''}>${m.icon||'🎮'} ${m.name}</option>`).join('');
+  activeModeId = parseInt(sel.value);
+}
+
+function onModeChange(){
+  activeModeId = parseInt(document.getElementById('f_mode').value);
+  // โหลด tier ปัจจุบันของผู้เล่นที่กำลังแก้ไข
+  if(editId){
+    const pt = allTiers.find(t=>t.player_id===editId&&t.mode_id===activeModeId);
+    buildTierGrid(pt?.tier_type||'');
+  } else {
+    buildTierGrid();
+  }
 }
 
 // PLAYERS
@@ -318,7 +343,7 @@ function renderPlayerList(){
   }
   el.innerHTML=players.map(p=>{
     const pt=allTiers.filter(t=>t.player_id===p.id);
-    const tierStr=pt.length?pt.map(t=>{const m=modes.find(x=>x.id===t.mode_id);return(m?m.name:'?')+': '+t.tier}).join(', '):'ยังไม่มี tier';
+    const tierStr=pt.length?pt.map(t=>{const m=modes.find(x=>x.id===t.mode_id);return(m?m.name:'?')+': '+t.tier_type}).join(', '):'ยังไม่มี tier';
     const av=p.avatar?`<img src="${p.avatar}" onerror="this.style.display='none'">`:(p.name[0]||'?').toUpperCase();
     return`<div class="p-item">
       <div class="p-item-avatar">${p.avatar?`<img src="${p.avatar}" onerror="this.style.display='none'">`:''}${!p.avatar?(p.name[0]||'?').toUpperCase():''}</div>
@@ -358,9 +383,9 @@ async function savePlayer(){
     if(tier && activeModeId){
       const existing=allTiers.find(t=>t.player_id===pid&&t.mode_id===activeModeId);
       if(existing){
-        await api(`player_tiers?id=eq.${existing.id}`, 'PATCH', {tier});
+        await api(`player_tiers?id=eq.${existing.id}`, 'PATCH', {tier_type:tier});
       } else {
-        await api('player_tiers', 'POST', {player_id:pid, mode_id:activeModeId, tier});
+        await api('player_tiers', 'POST', {player_id:pid, mode_id:activeModeId, tier_type:tier});
       }
     }
 
@@ -380,8 +405,9 @@ function editPlayer(id){
   document.getElementById('f_badge').value=p.badge||'';
   document.getElementById('f_avatar').value=p.avatar||'';
   previewImg();
+  buildModeSelect(activeModeId);
   const pt=allTiers.find(t=>t.player_id===id&&t.mode_id===activeModeId);
-  buildTierGrid(pt?.tier||'');
+  buildTierGrid(pt?.tier_type||'');
   document.getElementById('formLabel').textContent='✏️ แก้ไข: '+p.name;
   document.getElementById('cancelBtn').style.display='';
   document.getElementById('f_name').scrollIntoView({behavior:'smooth'});
@@ -415,20 +441,33 @@ function renderModes(){
     ?modes.map(m=>`<div class="mode-item">
       <span style="font-size:1.3rem">${m.icon||'🎮'}</span>
       <span style="flex:1;font-weight:600">${m.name}</span>
+      <span style="font-size:0.72rem;padding:2px 8px;border-radius:4px;margin-right:8px;${m.include_in_overall?'background:#00d4aa18;color:#00d4aa;border:1px solid #00d4aa30':'background:#ffffff08;color:var(--text3);border:1px solid var(--border2)'}">${m.include_in_overall?'✓ Overall':'ไม่นับ Overall'}</span>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.78rem;margin-right:6px" onclick="toggleOverall(${m.id},${!m.include_in_overall})">${m.include_in_overall?'ปิด Overall':'เปิด Overall'}</button>
       <button class="btn btn-red" style="padding:4px 10px;font-size:0.78rem" onclick="deleteMode(${m.id})">ลบ</button>
     </div>`).join('')
     :'<div style="color:var(--text3);font-size:0.85rem">ยังไม่มี mode</div>';
 }
 
+async function toggleOverall(id, val){
+  try{
+    await api(`modes?id=eq.${id}`,'PATCH',{include_in_overall:val});
+    modes=await api('modes?order=sort_order');
+    renderModes();
+    toast(val?'✅ เปิด Overall แล้ว':'ปิด Overall แล้ว');
+  }catch(e){toast('เกิดข้อผิดพลาด',false)}
+}
+
 async function addMode(){
   const name=document.getElementById('m_name').value.trim();
   const icon=document.getElementById('m_icon').value.trim();
+  const include_in_overall=document.getElementById('m_overall').checked;
   if(!name){toast('กรุณาใส่ชื่อ mode',false);return}
   try{
-    await api('modes','POST',{name,icon:icon||'🎮',sort_order:modes.length});
+    await api('modes','POST',{name,icon:icon||'🎮',sort_order:modes.length,include_in_overall});
     toast('✅ เพิ่ม mode สำเร็จ');
     document.getElementById('m_name').value='';
     document.getElementById('m_icon').value='';
+    document.getElementById('m_overall').checked=false;
     modes=await api('modes?order=sort_order');
     if(!activeModeId&&modes.length) activeModeId=modes[0].id;
     renderModes();
