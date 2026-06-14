@@ -249,7 +249,7 @@ async function api(path, method='GET', body=null){
     }
   };
   if(body) opts.body=JSON.stringify(body);
-  const r = await fetch(SUPABASE_URL+'/rest/v1/'+path, opts);
+  const r = await fetch(SUPABASE_URL+path, opts);
   if(r.status===204||r.status===200||r.status===201) {
     const t=await r.text();
     return t?JSON.parse(t):null;
