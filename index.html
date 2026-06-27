@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Comboo 500 — Tier List</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+input,textarea,[contenteditable]{-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;user-select:text}
 :root{
   --bg0:#0c0e14;--bg1:#111420;--bg2:#181c28;--bg3:#1e2335;
   --text1:#eceef4;--text2:#8b91a8;--text3:#4a5068;
@@ -31,7 +32,7 @@ nav{background:var(--bg1);border-bottom:1px solid var(--border);height:58px;disp
 .kbd{background:var(--bg3);border:1px solid var(--border2);color:var(--text3);font-size:0.65rem;padding:2px 5px;border-radius:4px;position:absolute;right:8px;top:50%;transform:translateY(-50%)}
 
 /* TABS */
-.tabs-bar{background:var(--bg1);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;gap:0;overflow-x:auto;scrollbar-width:none}
+.tabs-bar{background:var(--bg1);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;min-width:0;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-x:contain}
 .tabs-bar::-webkit-scrollbar{display:none}
 .tab-btn{display:flex;align-items:center;gap:7px;padding:0 18px;height:46px;border:none;background:none;color:var(--text3);font-size:0.8rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;position:relative}
 .tab-btn:hover{color:var(--text2)}
@@ -49,10 +50,10 @@ main{max-width:1280px;margin:0 auto;padding:1rem 1.5rem 4rem}
 
 /* TABLE */
 .table-wrap{background:var(--bg1);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.t-head{display:grid;grid-template-columns:64px 1fr 1fr;padding:0 1rem;height:36px;align-items:center;border-bottom:1px solid var(--border);color:var(--text3);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;gap:8px}
+.t-head{display:grid;grid-template-columns:64px minmax(0,1fr) 1fr;padding:0 1rem;height:36px;align-items:center;border-bottom:1px solid var(--border);color:var(--text3);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;gap:8px}
 .t-head-right{text-align:left;padding-left:0}
 
-.t-row{display:grid;grid-template-columns:64px 1fr 1fr;padding:0 1rem;align-items:center;border-bottom:1px solid var(--border);transition:background .15s;min-height:72px;gap:8px}
+.t-row{display:grid;grid-template-columns:64px minmax(0,1fr) 1fr;padding:0 1rem;align-items:center;border-bottom:1px solid var(--border);transition:background .15s;min-height:72px;gap:8px}
 .t-row:last-child{border-bottom:none}
 .t-row:hover{background:#ffffff04}
 .t-row.r1{background:#e8b84b06}
@@ -70,24 +71,18 @@ main{max-width:1280px;margin:0 auto;padding:1rem 1.5rem 4rem}
 .rank-box.normal{color:var(--text3);font-size:0.95rem;border:1px solid var(--border2)}
 
 /* PLAYER LEFT */
-.player-cell{display:flex;align-items:center;gap:12px;padding:10px 0}
+.player-cell{display:flex;align-items:center;gap:12px;padding:10px 0;min-width:0}
 .avatar{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:700;color:var(--text3);overflow:hidden;position:relative}
 .avatar img{width:100%;height:100%;object-fit:cover;border-radius:8px}
 .avatar-rank-badge{position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.6rem;border:2px solid var(--bg1)}
-.player-info{display:flex;flex-direction:column;gap:4px}
-.player-name{font-size:0.97rem;font-weight:700;color:var(--text1)}
+.player-info{display:flex;flex-direction:column;gap:4px;min-width:0;overflow:hidden}
+.player-name{font-size:0.97rem;font-weight:700;color:var(--text1);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;word-break:break-word;line-height:1.25}
 .player-sub{display:flex;align-items:center;gap:6px}
 .player-badge{font-size:0.68rem;padding:2px 7px;border-radius:4px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
 .badge-diamond{background:#00d4ff18;color:#55e0ff;border:1px solid #00d4ff30}
 .badge-master{background:#aa44ff18;color:#cc77ff;border:1px solid #aa44ff30}
 .badge-ace{background:#e8b84b18;color:#e8b84b;border:1px solid #e8b84b30}
 .badge-pts{color:var(--text3);font-size:0.7rem;font-weight:600}
-
-/* SCORE / TIER MIDDLE */
-.score-col{display:flex;align-items:center;justify-content:flex-start}
-.score-pill{display:inline-flex;align-items:center;gap:4px;background:#e8b84b12;border:1px solid #e8b84b30;border-radius:8px;padding:5px 10px}
-.score-num{font-size:1rem;font-weight:800;color:var(--accent)}
-.score-unit{font-size:0.68rem;color:var(--text3);font-weight:600}
 
 /* TIERS RIGHT */
 .tiers-col{display:flex;align-items:center;justify-content:flex-start;gap:4px;flex-wrap:nowrap;overflow:hidden;}
@@ -128,7 +123,7 @@ main{max-width:1280px;margin:0 auto;padding:1rem 1.5rem 4rem}
 @keyframes dots{0%,100%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
 
 /* HERO STATS */
-.hero{padding:1rem 1.5rem;max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:10px}
+.hero{display:none;padding:1rem 1.5rem;max-width:1280px;margin:0 auto;align-items:center;gap:10px}
 .stat-card{background:var(--bg1);border:1px solid var(--border);border-radius:9px;padding:0.75rem 1.2rem;display:flex;align-items:center;gap:10px}
 .stat-icon{font-size:1.1rem}
 .stat-info{}
@@ -136,18 +131,31 @@ main{max-width:1280px;margin:0 auto;padding:1rem 1.5rem 4rem}
 .stat-val{font-size:1.05rem;font-weight:800;color:var(--text1);line-height:1.1}
 .stat-val small{font-size:0.7rem;color:var(--text3);font-weight:500;margin-left:2px}
 
+.mobile-tiers{display:none}
 @media(max-width:768px){
-  .t-head,.t-row{grid-template-columns:44px 1fr 100px}
-  .t-head-tiers{text-align:right}
-  .tiers-col{flex-wrap:wrap;justify-content:flex-end;gap:5px;row-gap:6px}
-  .mode-tier-item{gap:2px}
-  .mode-icon{width:22px;height:22px}
-  .tier-mini{height:16px;min-width:26px;font-size:0.58rem;padding:0 3px}
+  .t-head,.t-row{grid-template-columns:44px minmax(0,1fr) auto;gap:6px}
+  .t-row{align-items:center}
+  .rank-wrap{display:flex;align-items:center;justify-content:center}
+  .rank-box{width:34px;height:34px;font-size:0.9rem}
+  .player-cell{padding:8px 0;gap:8px}
+  .avatar{width:40px;height:40px;font-size:1rem;flex-shrink:0}
+  .player-name{font-size:0.85rem}
+  .tiers-col{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:6px;flex-wrap:wrap;overflow:visible}
+  .mode-tier-item{flex-direction:column;align-items:center;gap:3px}
+  .mode-icon{width:28px;height:28px;border-radius:5px;font-size:0.8rem}
+  .tier-mini{height:19px;min-width:30px;font-size:0.62rem;padding:0 4px}
+  .t-head-tiers{display:block;text-align:right}
+  .tabs-bar{padding:0.6rem 0.9rem;gap:10px}
+  .tab-btn{flex-direction:column;justify-content:center;height:auto;min-width:74px;padding:9px 12px 10px;font-size:0.68rem;gap:6px;border-radius:12px;border-bottom:3px solid transparent}
+  .tab-btn.active{border-color:transparent;border-bottom-color:var(--accent);background:var(--bg2)}
+  .tab-icon img{width:28px;height:28px}
+  .tab-icon{font-size:1.35rem}
   nav{padding:0 1rem}
   main,.hero{padding-left:1rem;padding-right:1rem}
   .hero{flex-wrap:wrap}
   .nav-center{display:none}
   .search-wrap input{width:160px}
+  .server-info{display:none!important}
 }
 
 /* RIPPLE */
@@ -216,7 +224,6 @@ main{max-width:1280px;margin:0 auto;padding:1rem 1.5rem 4rem}
     <div class="t-head">
       <div>#</div>
       <div>PLAYER</div>
-      <div>SCORE</div>
       <div class="t-head-right t-head-tiers" id="tierHeader">TIERS</div>
     </div>
     <div id="tableBody"><div class="loading"><span class="loading-dots">กำลังโหลด</span></div></div>
@@ -239,19 +246,46 @@ const TIER_SCORE = {'S':15,'A+':12,'A':11,'A-':10,'B+':9,'B':8,'B-':7,'C+':6,'C'
 
 let modes=[], players=[], tiers=[], activeMode='overall';
 
+function esc(v){
+  return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function jsArg(v){
+  return esc(JSON.stringify(v));
+}
+
 async function api(path){
   const r=await fetch(SUPABASE_URL+'/rest/v1/'+path,{headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}});
+  if(!r.ok) throw new Error(`API error ${r.status}`);
   return r.json();
 }
 
-async function load(){
-  [modes,players,tiers]=await Promise.all([
-    api('modes?order=sort_order'),
-    api('players?order=name'),
-    api('player_tiers?select=*')
+function apiWithTimeout(path, ms=8000){
+  return Promise.race([
+    api(path),
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))
   ]);
-  renderTabs();
-  render();
+}
+
+async function load(){
+  // แสดง tab Overall ทันทีก่อน API ตอบ ให้กดได้เลย
+  document.getElementById('tabsBar').innerHTML=`<button class="tab-btn active" onclick="setMode('overall')"><span class="tab-icon">🏆</span>Overall</button>`;
+  document.getElementById('serverInfo').style.display='flex';
+
+  try{
+    [modes,players,tiers]=await Promise.all([
+      apiWithTimeout('modes?order=sort_order'),
+      apiWithTimeout('players?order=name'),
+      apiWithTimeout('player_tiers?select=*')
+    ]);
+    renderTabs();
+    render();
+  }catch(err){
+    console.error(err);
+    document.getElementById('heroStats').innerHTML='';
+    const msg=err.message==='timeout'?'การเชื่อมต่อช้าเกินไป ลองรีเฟรชใหม่':'โหลดข้อมูลไม่สำเร็จ';
+    document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><p>${msg}</p><p style="margin-top:12px"><button onclick="location.reload()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 20px;font-weight:700;cursor:pointer;font-size:0.85rem">ลองใหม่</button></p></div>`;
+  }
 }
 
 function renderTabs(){
@@ -259,11 +293,12 @@ function renderTabs(){
     <span class="tab-icon">🏆</span>Overall
   </button>`;
   const modeBtns=modes.map(m=>{
+    const modeName=esc(m.name);
     const iconHtml=m.icon_url
-      ?`<span class="tab-icon"><img src="${m.icon_url}" alt="${m.name}"></span>`
-      :`<span class="tab-icon">${m.icon||'🎮'}</span>`;
-    return`<button class="tab-btn${m.id===activeMode?' active':''}" onclick="setMode(${m.id})">
-      ${iconHtml}${m.name}
+      ?`<span class="tab-icon"><img src="${esc(m.icon_url)}" alt="${modeName}"></span>`
+      :`<span class="tab-icon">${esc(m.icon||'🎮')}</span>`;
+    return`<button class="tab-btn${m.id===activeMode?' active':''}" onclick="setMode(${jsArg(m.id)})">
+      ${iconHtml}${modeName}
     </button>`;
   }).join('');
   document.getElementById('tabsBar').innerHTML=overallBtn+modeBtns;
@@ -281,43 +316,42 @@ function badgeClass(badge){
   return'badge-ace';
 }
 
-function modeIconHtml(m){
-  if(m.icon_url) return`<img src="${m.icon_url}" alt="${m.name}">`;
-  return m.icon||'🎮';
-}
-
 function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
   const rankClass=rank<=3?` r${rank}`:'';
   const rankBoxClass=rank>3?' normal':'';
+  const playerName=esc(p.name);
+  const reg=esc(p.region||'TH');
+  const regClass=String(p.region||'TH').replace(/[^a-zA-Z0-9_-]/g,'');
+  const badge=esc(p.badge);
   const av=p.avatar
-    ?`<div class="avatar"><img src="${p.avatar}" alt="${p.name}" loading="lazy"></div>`
-    :`<div class="avatar">${(p.name[0]||'?').toUpperCase()}</div>`;
+    ?`<div class="avatar"><img src="${esc(p.avatar)}" alt="${playerName}" loading="lazy"></div>`
+    :`<div class="avatar">${esc((p.name?.[0]||'?').toUpperCase())}</div>`;
 
-  const reg=p.region||'TH';
   const bclass=badgeClass(p.badge);
-  const ptsHtml=isOverall?` <span class="badge-pts">(${scoreOrTier} pts)</span>`:'';
+  const scoreText=isOverall?`${scoreOrTier} pts`:scoreOrTier;
+  const ptsHtml=isOverall?` <span class="badge-pts">(${scoreText})</span>`:` <span class="tier-mini ${TIER_CLASS[scoreOrTier]||'t-F'}">${scoreOrTier}</span>`;
   const badgeHtml=p.badge
-    ?`<span class="player-badge ${bclass}">◈ ${p.badge}${ptsHtml}</span>`
-    :(isOverall?`<span class="badge-pts">${scoreOrTier} pts</span>`:'');
+    ?`<span class="player-badge ${bclass}">◈ ${badge}${ptsHtml}</span>`
+    :`<span class="${isOverall?'badge-pts':`tier-mini ${TIER_CLASS[scoreOrTier]||'t-F'}`}">${scoreText}</span>`;
 
   // tiers column — เฉพาะ mode ที่มี tier เท่านั้น
   const modesForRight = allModes.length ? allModes : [];
   const tiersRight = modesForRight.map(m=>{
     const tier=(tiersByPlayer[p.id]||{})[m.id];
     if(!tier) return''; // ไม่มี tier ไม่แสดง
-    const iconContent=m.icon_url?`<img src="${m.icon_url}" alt="${m.name}">`:(m.icon||'🎮');
+    const iconContent=m.icon_url?`<img src="${esc(m.icon_url)}" alt="${esc(m.name)}">`:esc(m.icon||'🎮');
     return`<div class="mode-tier-item">
       <div class="mode-icon">${iconContent}</div>
       <div class="tier-mini ${TIER_CLASS[tier]||'t-F'}">${tier}</div>
     </div>`;
   }).join('');
 
-  return`<div class="t-row${rankClass}" onclick="openModal('${p.id}',${rank},${isOverall?scoreOrTier:0})" style="cursor:pointer">
+  return`<div class="t-row${rankClass}" onclick="openModal(${jsArg(p.id)},${rank},${isOverall?scoreOrTier:0})" style="cursor:pointer">
     <div class="rank-wrap"><div class="rank-box${rankBoxClass}">${rank}</div></div>
     <div class="player-cell">
       ${av}
       <div class="player-info">
-        <div class="player-name">${p.name} <span class="reg reg-${reg}">${reg}</span></div>
+        <div class="player-name">${playerName} <span class="reg reg-${regClass}">${reg}</span></div>
         <div class="player-sub">${badgeHtml}</div>
       </div>
     </div>
@@ -345,7 +379,7 @@ function render(){
     });
 
     let list=players.filter(p=>scoreMap[p.id]!==undefined);
-    if(q) list=list.filter(p=>p.name.toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q)));
+    if(q) list=list.filter(p=>String(p.name||'').toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q)));
     list=list.map((p,i)=>({...p,_idx:i}));
     list.sort((a,b)=>{
       const diff=scoreMap[b.id]-scoreMap[a.id];
@@ -375,7 +409,7 @@ function render(){
   modeTiers.forEach(t=>tierMap[t.player_id]=t);
 
   let list=players.filter(p=>tierMap[p.id]);
-  if(q) list=list.filter(p=>p.name.toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q)));
+  if(q) list=list.filter(p=>String(p.name||'').toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q)));
   list.sort((a,b)=>tierScore(tierMap[a.id]?.tier_type)-tierScore(tierMap[b.id]?.tier_type));
 
   const counts={};
@@ -389,16 +423,16 @@ function render(){
     <div class="stat-card"><span class="stat-icon">⭐</span><div class="stat-info"><div class="stat-label">S Tier</div><div class="stat-val">${counts['S']}<small>คน</small></div></div></div>
   `;
 
-  // For single mode right column: show all other modes
-  const otherModes=modes.filter(m=>m.id!==activeMode);
-  document.getElementById('tierHeader').textContent='Tiers (โหมดอื่น)';
+  // For single mode: show only the selected mode. Overall still shows all counted modes.
+  const selectedModes=modes.filter(m=>m.id===activeMode);
+  document.getElementById('tierHeader').textContent='TIER';
 
   if(!list.length){
     document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีผู้เล่นใน mode นี้</p></div>`;
     return;
   }
   document.getElementById('tableBody').innerHTML=list.map((p,i)=>
-    renderRow(p, i+1, tierMap[p.id]?.tier_type||'F', false, otherModes, tiersByPlayer)
+    renderRow(p, i+1, tierMap[p.id]?.tier_type||'F', false, selectedModes, tiersByPlayer)
   ).join('');
 }
 
@@ -412,26 +446,26 @@ document.addEventListener('keydown',e=>{
 
 load();
 
-// MODAL
-let _lastRank=1,_lastPts=0;
 function openModal(pid, rank, pts){
   const p=players.find(x=>x.id===pid);
   if(!p) return;
-  _lastRank=rank; _lastPts=pts;
-  const reg=p.region||'TH';
+  const playerName=esc(p.name);
+  const reg=esc(p.region||'TH');
+  const badge=esc(p.badge);
   const bclass=badgeClass(p.badge);
 
-  // build tiers list (all modes)
+  // Overall shows all modes. A single mode shows only the selected mode.
   const tiersByP={};
   tiers.filter(t=>t.player_id===pid).forEach(t=>tiersByP[t.mode_id]=t.tier_type);
-  const hasTiers=modes.some(m=>tiersByP[m.id]);
-  const tiersHtml=modes.map(m=>{
+  const modalModes=activeMode==='overall'?modes:modes.filter(m=>m.id===activeMode);
+  const hasTiers=modalModes.some(m=>tiersByP[m.id]);
+  const tiersHtml=modalModes.map(m=>{
     const tier=tiersByP[m.id];
     if(!tier) return'';
-    const iconContent=m.icon_url?`<img src="${m.icon_url}" alt="${m.name}" style="width:100%;height:100%;object-fit:cover;border-radius:5px">`:(m.icon||'🎮');
+    const iconContent=m.icon_url?`<img src="${esc(m.icon_url)}" alt="${esc(m.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:5px">`:esc(m.icon||'🎮');
     return`<div class="mode-tier-item" style="flex-direction:row;gap:6px;align-items:center;background:var(--bg3);border-radius:8px;padding:6px 10px">
       <div class="mode-icon" style="flex-shrink:0">${iconContent}</div>
-      <span style="font-size:0.75rem;color:var(--text2);font-weight:600">${m.name}</span>
+      <span style="font-size:0.75rem;color:var(--text2);font-weight:600">${esc(m.name)}</span>
       <span class="tier-mini ${TIER_CLASS[tier]||'t-F'}" style="margin-left:auto">${tier}</span>
     </div>`;
   }).join('');
@@ -439,21 +473,27 @@ function openModal(pid, rank, pts){
   const overallModes=modes.filter(m=>m.include_in_overall);
   const overallModeIds=new Set(overallModes.map(m=>m.id));
   const totalPts=tiers.filter(t=>t.player_id===pid&&overallModeIds.has(t.mode_id)).reduce((s,t)=>s+(TIER_SCORE[t.tier_type]||0),0);
+  const activeModeInfo=modes.find(m=>m.id===activeMode);
+  const positionLabel=esc(activeMode==='overall'?'OVERALL':(activeModeInfo?.name||'MODE'));
+  const currentTier=activeMode==='overall'?null:tiersByP[activeMode];
+  const positionMeta=activeMode==='overall'
+    ?`${totalPts} points`
+    :(currentTier?`${currentTier} tier / ${totalPts} overall pts`:`${totalPts} overall pts`);
 
   const regionLabels={'TH':'Thailand','AS':'Asia','EU':'Europe','NA':'North America'};
 
   document.getElementById('modalInner').innerHTML=`
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-avatar">${p.avatar?`<img src="${p.avatar}" alt="${p.name}">`:(p.name[0]||'?').toUpperCase()}</div>
-    <div class="modal-name">${p.name}</div>
-    ${p.uid?`<div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em">UID: <span style="color:var(--text2);font-weight:600">${p.uid}</span></div>`:''}
-    ${p.badge?`<div><span class="modal-badge ${bclass}">◈ ${p.badge}</span></div>`:''}
+    <div class="modal-avatar">${p.avatar?`<img src="${esc(p.avatar)}" alt="${playerName}">`:esc((p.name?.[0]||'?').toUpperCase())}</div>
+    <div class="modal-name">${playerName}</div>
+    ${p.uid?`<div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em">UID: <span style="color:var(--text2);font-weight:600">${esc(p.uid)}</span></div>`:''}
+    ${p.badge?`<div><span class="modal-badge ${bclass}">◈ ${badge}</span></div>`:''}
     <div class="modal-region">${regionLabels[reg]||reg}</div>
     <div class="modal-section">
       <div class="modal-section-title">Position</div>
       <div class="modal-position-box">
         <div class="modal-pos-num">${rank}.</div>
-        <div class="modal-pos-detail">🏆 OVERALL <span style="color:var(--text3);font-weight:500">(${totalPts} points)</span></div>
+        <div class="modal-pos-detail">🏆 ${positionLabel} <span style="color:var(--text3);font-weight:500">(${positionMeta})</span></div>
       </div>
     </div>
     ${hasTiers?`<div class="modal-section">
