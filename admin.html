@@ -126,9 +126,9 @@ textarea{resize:vertical;min-height:80px}
 
 <main>
   <div class="admin-tabs">
-    <button class="atab active" onclick="switchTab('players')">👤 ผู้เล่น</button>
-    <button class="atab" onclick="switchTab('modes')">🎮 Game Mode</button>
-    <button class="atab" onclick="switchTab('embed')">🔗 Embed</button>
+    <button class="atab active" data-tab="players" onclick="switchTab('players', this)">👤 ผู้เล่น</button>
+    <button class="atab" data-tab="modes" onclick="switchTab('modes', this)">🎮 Game Mode</button>
+    <button class="atab" data-tab="embed" onclick="switchTab('embed', this)">🔗 Embed</button>
   </div>
 
   <!-- PLAYERS SECTION -->
@@ -146,16 +146,28 @@ textarea{resize:vertical;min-height:80px}
           <label>UID ผู้เล่น</label>
           <div style="display:flex;gap:8px">
             <input type="number" id="f_uid" placeholder="เช่น 12345678" style="flex:1">
-            <button class="btn btn-ghost" type="button" onclick="lookupFreeFirePlayer()" style="white-space:nowrap">Fetch</button>
+            <button class="btn btn-primary" type="button" onclick="lookupFreeFirePlayer()" style="white-space:nowrap">🔍 Fetch</button>
           </div>
         </div>
         <div>
           <label>ภูมิภาค</label>
           <select id="f_region">
             <option value="TH">TH — Thailand</option>
-            <option value="AS">AS — Asia</option>
-            <option value="EU">EU — Europe</option>
+            <option value="IND">IND — India</option>
+            <option value="BD">BD — Bangladesh</option>
+            <option value="PK">PK — Pakistan</option>
+            <option value="SG">SG — Singapore</option>
+            <option value="ID">ID — Indonesia</option>
+            <option value="VN">VN — Vietnam</option>
+            <option value="TW">TW — Taiwan</option>
+            <option value="BR">BR — Brazil</option>
+            <option value="SAC">SAC — South America</option>
+            <option value="US">US — United States</option>
             <option value="NA">NA — North America</option>
+            <option value="ME">ME — Middle East</option>
+            <option value="RU">RU — Russia</option>
+            <option value="CIS">CIS — CIS Countries</option>
+            <option value="EUROPE">EUROPE — Europe</option>
           </select>
         </div>
         <div>
@@ -316,11 +328,20 @@ async function api(path, method='GET', body=null){
   throw new Error(await r.text());
 }
 
-const FREEFIRE_API_BASE = 'https://freefireinfo-zy9l.onrender.com/api/v1';
+// SiamBhau69 Centralized Free Fire API — "Free Fire Info" group (free tier).
+// Docs: github.com/siambhau/FreeFireApi
+const FREEFIRE_API_BASE = 'http://siambhau69.eu.cc';
+const FREEFIRE_API_KEY = 'comboo500step:FFINFO:1KM';
 
 function freeFireServer(region){
-  const map = { TH:'TH', AS:'SG', NA:'US', EU:'CIS' };
-  return map[region] || region || 'TH';
+  // แปลง region code เป็นรูปแบบที่ Free Fire API ยอมรับ (ตัวเล็ก)
+  const regionMap = {
+    'TH': 'th', 'IND': 'ind', 'BD': 'bd', 'PK': 'pk', 'SG': 'sg',
+    'ID': 'id', 'VN': 'vn', 'TW': 'tw', 'BR': 'br', 'SAC': 'sac',
+    'US': 'us', 'NA': 'na', 'ME': 'me', 'RU': 'ru', 'CIS': 'cis',
+    'EUROPE': 'eu', 'AS': 'sg', 'EU': 'eu'
+  };
+  return regionMap[region] || region?.toLowerCase() || 'th';
 }
 
 async function lookupFreeFirePlayer(){
@@ -331,17 +352,27 @@ async function lookupFreeFirePlayer(){
   if(!uid){toast('กรุณาใส่ UID ก่อนค้นหา', false); return}
 
   const server = freeFireServer(regionEl.value);
-  const url = `${FREEFIRE_API_BASE}/player-profile?uid=${encodeURIComponent(uid)}&server=${encodeURIComponent(server)}`;
+  // /freefireinfo/bhau is the free "Free Fire Info" endpoint on siambhau69's API
+  const url = `${FREEFIRE_API_BASE}/freefireinfo/bhau?uid=${encodeURIComponent(uid)}&region=${encodeURIComponent(server)}&key=${encodeURIComponent(FREEFIRE_API_KEY)}`;
 
   try{
     toast('กำลังดึงข้อมูล Free Fire...');
+    console.log('[lookupFreeFirePlayer] fetch', url);
     const ctrl = new AbortController();
     const timer = setTimeout(()=>ctrl.abort(), 10000);
     const r = await fetch(url, { signal: ctrl.signal });
     clearTimeout(timer);
-    if(!r.ok) throw new Error(`Free Fire API ${r.status}`);
+    if(!r.ok){
+      const txt = await r.text().catch(()=>null);
+      console.error('[lookupFreeFirePlayer] non-OK response', r.status, txt);
+      throw new Error(`Free Fire API ${r.status}: ${txt||'no body'}`);
+    }
 
-    const data = await r.json();
+    const data = await r.json().catch(async err=>{
+      const txt = await r.text().catch(()=>null);
+      console.error('[lookupFreeFirePlayer] json parse error', err, txt);
+      throw new Error('Invalid JSON from Free Fire API');
+    });
     const info = data.basicinfo || data.basicInfo || data.data?.basicinfo || data.data?.basicInfo;
     const nickname = info?.nickname || info?.accountName || info?.name;
     const accountId = info?.accountid || info?.accountId || uid;
@@ -366,11 +397,16 @@ function toast(msg,ok=true){
 }
 
 // TABS
-function switchTab(name){
+function switchTab(name, el){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.atab').forEach(b=>b.classList.remove('active'));
   document.getElementById('sec-'+name).classList.add('active');
-  event.target.classList.add('active');
+  if(el && el.classList){
+    el.classList.add('active');
+  } else {
+    const btn = document.querySelector(`.atab[data-tab="${name}"]`);
+    if(btn) btn.classList.add('active');
+  }
   if(name==='modes') renderModes();
   if(name==='embed') initEmbed();
 }
