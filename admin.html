@@ -324,6 +324,8 @@ if(ADMIN_PW_SESSION){
   document.getElementById('app').style.display='block';
 }
 
+// API — เรียกผ่าน /api/admin (serverless proxy) แทนการยิงตรงไป Supabase
+// secret key ไม่ปรากฏในโค้ดฝั่งนี้อีกต่อไป
 async function api(path, method='GET', body=null){
   const opts = {
     method,
@@ -346,40 +348,50 @@ async function api(path, method='GET', body=null){
   throw new Error(await r.text());
 }
 
-// SiamBhau69 Centralized Free Fire API — "Free Fire Info" group (free tier).
-// Docs: github.com/siambhau/FreeFireApi
-const FREEFIRE_API_BASE = 'http://siambhau69.eu.cc';
-const FREEFIRE_API_KEY = 'comboo500step:FFINFO:1KM';
+// Free Fire lookup — เรียกผ่าน /api/freefire (serverless proxy)
+// key ไม่ปรากฏในโค้ดฝั่งนี้อีกต่อไป
 
-function freeFireServer(region){
-  // แปลง region code เป็นรูปแบบที่ Free Fire API ยอมรับ (ตัวเล็ก)
-  const regionMap = {
-    'TH': 'th', 'IND': 'ind', 'BD': 'bd', 'PK': 'pk', 'SG': 'sg',
-    'ID': 'id', 'VN': 'vn', 'TW': 'tw', 'BR': 'br', 'SAC': 'sac',
-    'US': 'us', 'NA': 'na', 'ME': 'me', 'RU': 'ru', 'CIS': 'cis',
-    'EUROPE': 'eu', 'AS': 'sg', 'EU': 'eu'
-  };
-  return regionMap[region] || region?.toLowerCase() || 'th';
-}
+// cache ผลลัพธ์ Free Fire ไว้ในหน่วยความจำ กัน request ซ้ำถ้าค้น UID เดิมภายใน 10 นาที
+const FF_CACHE_TTL = 10 * 60 * 1000; // 10 นาที
+const ffCache = new Map(); // key: `${uid}:${server}` -> { nickname, ts }
+let ffFetchInFlight = false;
 
 async function lookupFreeFirePlayer(){
   const uidEl = document.getElementById('f_uid');
   const nameEl = document.getElementById('f_name');
   const regionEl = document.getElementById('f_region');
+  const fetchBtn = document.querySelector('button[onclick="lookupFreeFirePlayer()"]');
   const uid = uidEl.value.trim();
   if(!uid){toast('กรุณาใส่ UID ก่อนค้นหา', false); return}
 
-  const server = freeFireServer(regionEl.value);
-  // /freefireinfo/bhau is the free "Free Fire Info" endpoint on siambhau69's API
-  const url = `${FREEFIRE_API_BASE}/freefireinfo/bhau?uid=${encodeURIComponent(uid)}&region=${encodeURIComponent(server)}&key=${encodeURIComponent(FREEFIRE_API_KEY)}`;
+  // กันกดซ้ำระหว่างกำลังโหลดอยู่
+  if(ffFetchInFlight){ toast('กำลังค้นหาอยู่ รอสักครู่', false); return }
 
+  const server = freeFireServer(regionEl.value);
+  const cacheKey = `${uid}:${server}`;
+
+  // ใช้ผลลัพธ์เดิมถ้าเคยค้น UID นี้มาแล้วไม่เกิน 10 นาที ไม่ต้องยิง request ซ้ำ
+  const cached = ffCache.get(cacheKey);
+  if(cached && (Date.now() - cached.ts) < FF_CACHE_TTL){
+    nameEl.value = cached.nickname;
+    toast(`เจอผู้เล่น: ${cached.nickname} (จากแคช)`);
+    return;
+  }
+
+  const url = `/api/freefire?uid=${encodeURIComponent(uid)}&region=${encodeURIComponent(server)}`;
+
+  ffFetchInFlight = true;
+  if(fetchBtn) fetchBtn.disabled = true;
   try{
     toast('กำลังดึงข้อมูล Free Fire...');
-    console.log('[lookupFreeFirePlayer] fetch', url);
     const ctrl = new AbortController();
     const timer = setTimeout(()=>ctrl.abort(), 10000);
-    const r = await fetch(url, { signal: ctrl.signal });
+    const r = await fetch(url, {
+      headers: { 'x-admin-pw': ADMIN_PW_SESSION || sessionStorage.getItem('admin_pw') || '' },
+      signal: ctrl.signal
+    });
     clearTimeout(timer);
+    if(r.status===401){ logout(); throw new Error('Unauthorized'); }
     if(!r.ok){
       const txt = await r.text().catch(()=>null);
       console.error('[lookupFreeFirePlayer] non-OK response', r.status, txt);
@@ -391,19 +403,19 @@ async function lookupFreeFirePlayer(){
       console.error('[lookupFreeFirePlayer] json parse error', err, txt);
       throw new Error('Invalid JSON from Free Fire API');
     });
-    const info = data.basicinfo || data.basicInfo || data.data?.basicinfo || data.data?.basicInfo;
+    const info = data.basicInfo || data.basicinfo || data.data?.basicInfo || data.data?.basicinfo;
     const nickname = info?.nickname || info?.accountName || info?.name;
-    const accountId = info?.accountid || info?.accountId || uid;
-    const region = info?.region || server;
 
     if(!nickname) throw new Error(data.message || 'ไม่พบชื่อผู้เล่น');
-    uidEl.value = accountId;
+    ffCache.set(cacheKey, { nickname, ts: Date.now() });
     nameEl.value = nickname;
-    if([...regionEl.options].some(o=>o.value===region)) regionEl.value = region;
     toast(`เจอผู้เล่น: ${nickname}`);
   }catch(e){
     const msg = e.name === 'AbortError' ? 'Free Fire API ตอบช้าเกินไป' : e.message;
     toast('ค้นหาไม่สำเร็จ: '+msg, false);
+  }finally{
+    ffFetchInFlight = false;
+    if(fetchBtn) fetchBtn.disabled = false;
   }
 }
 
@@ -514,7 +526,7 @@ function buildModeSelect(selectedModeId=null){
 
 function onModeChange(){
   activeModeId = parseInt(document.getElementById('f_mode').value);
-
+  // โหลด tier ปัจจุบันของผู้เล่นที่กำลังแก้ไข
   if(editId){
     const pt = allTiers.find(t=>t.player_id===editId&&t.mode_id===activeModeId);
     buildTierGrid(pt?.tier_type||'');
