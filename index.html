@@ -311,17 +311,44 @@ function apiWithTimeout(path, ms=8000){
   ]);
 }
 
+async function apiRpc(fn, ms=8000){
+  const call = fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{
+    method:'POST',
+    headers:{
+      'apikey':SUPABASE_ANON,
+      'Authorization':'Bearer '+SUPABASE_ANON,
+      'Content-Type':'application/json'
+    },
+    body: JSON.stringify({})
+  }).then(r=>{ if(!r.ok) throw new Error(`RPC error ${r.status}`); return r.json(); });
+  return Promise.race([
+    call,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))
+  ]);
+}
+
 async function load(){
   // แสดง tab Overall ทันทีก่อน API ตอบ ให้กดได้เลย
   document.getElementById('tabsBar').innerHTML=`<button class="tab-btn active" onclick="setMode('overall')"><span class="tab-icon">🏆</span>Overall</button>`;
   document.getElementById('serverInfo').style.display='flex';
 
   try{
-    [modes,players,tiers]=await Promise.all([
-      apiWithTimeout('modes?order=sort_order'),
-      apiWithTimeout('players?order=name'),
-      apiWithTimeout('player_tiers?select=*')
-    ]);
+    // ลองยิง request เดียว (RPC รวม modes+players+player_tiers) ก่อน ลด round-trip จาก 3 เหลือ 1
+    try{
+      const data = await apiRpc('get_leaderboard_data');
+      modes = data.modes || [];
+      players = data.players || [];
+      tiers = data.player_tiers || [];
+    }catch(rpcErr){
+      // ยังไม่ได้สร้าง function get_leaderboard_data ใน Supabase หรือ RPC ล้มเหลว
+      // → fallback ไปยิง 3 request แบบเดิม กันเว็บพัง
+      console.warn('[load] RPC ล้มเหลว, fallback เป็น 3 requests:', rpcErr.message);
+      [modes,players,tiers]=await Promise.all([
+        apiWithTimeout('modes?order=sort_order'),
+        apiWithTimeout('players?order=name'),
+        apiWithTimeout('player_tiers?select=*')
+      ]);
+    }
     renderTabs();
     render();
   }catch(err){
