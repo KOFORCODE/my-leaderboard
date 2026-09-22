@@ -351,6 +351,17 @@ async function api(path, method='GET', body=null){
 // Free Fire lookup — เรียกผ่าน /api/freefire (serverless proxy)
 // key ไม่ปรากฏในโค้ดฝั่งนี้อีกต่อไป
 
+function freeFireServer(region){
+  // แปลง region code เป็นรูปแบบที่ Free Fire API ยอมรับ (ตัวเล็ก)
+  const regionMap = {
+    'TH': 'th', 'IND': 'ind', 'BD': 'bd', 'PK': 'pk', 'SG': 'sg',
+    'ID': 'id', 'VN': 'vn', 'TW': 'tw', 'BR': 'br', 'SAC': 'sac',
+    'US': 'us', 'NA': 'na', 'ME': 'me', 'RU': 'ru', 'CIS': 'cis',
+    'EUROPE': 'eu', 'AS': 'sg', 'EU': 'eu'
+  };
+  return regionMap[region] || region?.toLowerCase() || 'th';
+}
+
 // cache ผลลัพธ์ Free Fire ไว้ในหน่วยความจำ กัน request ซ้ำถ้าค้น UID เดิมภายใน 10 นาที
 const FF_CACHE_TTL = 10 * 60 * 1000; // 10 นาที
 const ffCache = new Map(); // key: `${uid}:${server}` -> { nickname, ts }
