@@ -282,42 +282,63 @@ let modes = [], players = [], allTiers = [];
 let activeModeId = null;
 
 // AUTH
-function doLogin(){
+async function doLogin(){
   const pw = document.getElementById('pwInput').value;
-  if(pw === ADMIN_PW){
-    sessionStorage.setItem('admin_ok','1');
+  const loginBtn = document.querySelector('.btn-login');
+  loginBtn.disabled = true;
+  try{
+    // ยืนยันรหัสผ่านกับ server (/api/admin) แทนการเทียบในโค้ด client
+    const r = await fetch('/api/admin?path=modes', { headers:{ 'x-admin-pw': pw } });
+    if(r.status === 401){
+      document.getElementById('loginErr').style.display='block';
+      document.getElementById('pwInput').value='';
+      return;
+    }
+    if(!r.ok){
+      document.getElementById('loginErr').textContent='เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ ลองใหม่อีกครั้ง';
+      document.getElementById('loginErr').style.display='block';
+      return;
+    }
+    ADMIN_PW_SESSION = pw;
+    sessionStorage.setItem('admin_pw', pw);
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
     init();
-  } else {
+  } catch(e){
+    document.getElementById('loginErr').textContent='เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ ลองใหม่อีกครั้ง';
     document.getElementById('loginErr').style.display='block';
-    document.getElementById('pwInput').value='';
+  } finally {
+    loginBtn.disabled = false;
   }
 }
 
 function logout(){
-  sessionStorage.removeItem('admin_ok');
+  sessionStorage.removeItem('admin_pw');
+  ADMIN_PW_SESSION = null;
   location.reload();
 }
 
-if(sessionStorage.getItem('admin_ok')==='1'){
+let ADMIN_PW_SESSION = sessionStorage.getItem('admin_pw') || null;
+if(ADMIN_PW_SESSION){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').style.display='block';
 }
 
-// API
 async function api(path, method='GET', body=null){
   const opts = {
     method,
     headers:{
-      'apikey':SUPABASE_SERVICE,
-      'Authorization':'Bearer '+SUPABASE_SERVICE,
-      'Content-Type':'application/json',
-      'Prefer': method==='POST'?'return=representation':'return=minimal'
+      'x-admin-pw': ADMIN_PW_SESSION || sessionStorage.getItem('admin_pw') || '',
+      'Content-Type':'application/json'
     }
   };
   if(body) opts.body=JSON.stringify(body);
-  const r = await fetch(SUPABASE_URL+path, opts);
+  const r = await fetch('/api/admin?path='+encodeURIComponent(path), opts);
+  if(r.status===401){
+    // session หมดอายุ/รหัสผ่านไม่ถูกต้อง ให้ออกจากระบบ
+    logout();
+    throw new Error('Unauthorized');
+  }
   if(r.status===204||r.status===200||r.status===201) {
     const t=await r.text();
     return t?JSON.parse(t):null;
@@ -493,7 +514,7 @@ function buildModeSelect(selectedModeId=null){
 
 function onModeChange(){
   activeModeId = parseInt(document.getElementById('f_mode').value);
-  // โหลด tier ปัจจุบันของผู้เล่นที่กำลังแก้ไข
+
   if(editId){
     const pt = allTiers.find(t=>t.player_id===editId&&t.mode_id===activeModeId);
     buildTierGrid(pt?.tier_type||'');
@@ -677,7 +698,7 @@ async function deleteMode(id){
 }
 
 // check session
-if(sessionStorage.getItem('admin_ok')==='1') init();
+if(ADMIN_PW_SESSION) init();
 </script>
 </body>
 </html>
