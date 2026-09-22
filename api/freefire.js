@@ -42,7 +42,10 @@ export default async function handler(req, res) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 10000);
     const r = await fetch(url, {
-      headers: { 'x-api-key': FREEFIRE_API_KEY },
+      headers: {
+        'x-api-key': FREEFIRE_API_KEY,
+        'User-Agent': 'Comboo500-Leaderboard/1.0 (+https://my-leaderboard-five.vercel.app)',
+      },
       signal: ctrl.signal,
     });
     clearTimeout(timer);
