@@ -40,7 +40,9 @@ nav{background:#12141ce6;backdrop-filter:blur(14px) saturate(140%);-webkit-backd
 .nav-link:hover{color:var(--text1);background:#ffffff09}
 .nav-right{display:flex;align-items:center;gap:10px}
 .search-wrap{position:relative}
-.search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);width:14px;height:14px;pointer-events:none}
+.search-wrap .search-btn{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;padding:0;border:none;background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color .15s,background .15s}
+.search-wrap .search-btn:hover{color:var(--accent);background:#ffffff0c}
+.search-wrap .search-btn svg{width:14px;height:14px;pointer-events:none}
 .search-wrap input{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:8px 34px 8px 34px;color:var(--text1);font-size:.82rem;font-family:var(--font-body);width:216px;outline:none;transition:border .2s,background .2s}
 .search-wrap input:focus{border-color:#f2b93e55;background:var(--bg3)}
 .search-wrap input::placeholder{color:var(--text3)}
@@ -242,8 +244,8 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   </div>
   <div class="nav-right">
     <div class="search-wrap">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="ค้นหาผู้เล่น..." oninput="render()">
+      <button type="button" class="search-btn" onclick="searchPlayer()" aria-label="ค้นหา"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
+      <input type="text" id="searchInput" placeholder="พิมพ์ชื่อ/UID แล้วกด Enter..." onkeydown="if(event.key==='Enter')searchPlayer()">
       <span class="kbd">/</span>
     </div>
   </div>
@@ -328,10 +330,12 @@ async function apiRpc(fn, ms=8000){
 }
 
 async function load(){
+  // แสดง tab Overall ทันทีก่อน API ตอบ ให้กดได้เลย
   document.getElementById('tabsBar').innerHTML=`<button class="tab-btn active" onclick="setMode('overall')"><span class="tab-icon">🏆</span>Overall</button>`;
   document.getElementById('serverInfo').style.display='flex';
 
   try{
+    // ลองยิง request เดียว (RPC รวม modes+players+player_tiers) ก่อน ลด round-trip จาก 3 เหลือ 1
     try{
       const data = await apiRpc('get_leaderboard_data');
       modes = data.modes || [];
@@ -442,8 +446,6 @@ function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
 }
 
 function render(){
-  const q=document.getElementById('searchInput').value.toLowerCase();
-
   // build per-player tier map: {player_id: {mode_id: tier_type}}
   const tiersByPlayer={};
   tiers.forEach(t=>{
@@ -461,20 +463,11 @@ function render(){
     });
 
     let list=players.filter(p=>scoreMap[p.id]!==undefined);
-    if(q) list=list.filter(p=>String(p.name||'').toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q)));
     list=list.map((p,i)=>({...p,_idx:i}));
     list.sort((a,b)=>{
       const diff=scoreMap[b.id]-scoreMap[a.id];
       return diff!==0?diff:a._idx-b._idx;
     });
-
-    // ค้นหาแล้ว: ผู้เล่นที่มีชื่อ/UID ตรงกัน แต่ยังไม่มีคะแนนเลย (ไม่เคยได้ tier ใน mode ที่นับ overall)
-    // ให้โชว์ต่อท้ายแบบ "Unranked" แทนที่จะหายไปเงียบๆ
-    let unrankedMatches=[];
-    if(q){
-      unrankedMatches=players.filter(p=>scoreMap[p.id]===undefined &&
-        (String(p.name||'').toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q))));
-    }
 
     document.getElementById('heroStats').innerHTML=`
       <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่นทั้งหมด</div><div class="stat-val">${list.length}<small>คน</small></div></div></div>
@@ -483,17 +476,13 @@ function render(){
     `;
 
     document.getElementById('tierHeader').textContent='TIERS';
-    if(!list.length && !unrankedMatches.length){
+    if(!list.length){
       document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีข้อมูล Overall</p></div>`;
       return;
     }
-    const rankedHtml=list.map((p,i)=>
+    document.getElementById('tableBody').innerHTML=list.map((p,i)=>
       renderRow(p, i+1, scoreMap[p.id], true, overallModes, tiersByPlayer)
     ).join('');
-    const unrankedHtml=unrankedMatches.map(p=>
-      renderRow(p, null, 0, true, overallModes, tiersByPlayer)
-    ).join('');
-    document.getElementById('tableBody').innerHTML=rankedHtml+unrankedHtml;
     return;
   }
 
@@ -503,20 +492,12 @@ function render(){
   modeTiers.forEach(t=>tierMap[t.player_id]=t);
 
   let list=players.filter(p=>tierMap[p.id]);
-  if(q) list=list.filter(p=>String(p.name||'').toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q)));
   list.sort((a,b)=>{
     const diff=tierScore(tierMap[a.id]?.tier_type)-tierScore(tierMap[b.id]?.tier_type);
     if(diff!==0) return diff;
     // tier เท่ากัน: ใครได้ rank นี้ก่อน (id แถว player_tiers น้อยกว่า) อยู่บนกว่าเสมอ
     return (tierMap[a.id]?.id??0)-(tierMap[b.id]?.id??0);
   });
-
-  // ค้นหาแล้ว: ผู้เล่นที่ชื่อ/UID ตรงกัน แต่ยังไม่มี tier ใน mode นี้ → โชว์ต่อท้ายแบบ Unranked
-  let unrankedMatches=[];
-  if(q){
-    unrankedMatches=players.filter(p=>!tierMap[p.id] &&
-      (String(p.name||'').toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q))));
-  }
 
   const counts={};
   TIER_ORDER.forEach(t=>counts[t]=0);
@@ -533,20 +514,101 @@ function render(){
   const selectedModes=modes.filter(m=>m.id===activeMode);
   document.getElementById('tierHeader').textContent='TIER';
 
-  if(!list.length && !unrankedMatches.length){
+  if(!list.length){
     document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีผู้เล่นใน mode นี้</p></div>`;
     return;
   }
-  const rankedHtml=list.map((p,i)=>
+  document.getElementById('tableBody').innerHTML=list.map((p,i)=>
     renderRow(p, i+1, tierMap[p.id]?.tier_type||'F', false, selectedModes, tiersByPlayer)
   ).join('');
-  const unrankedHtml=unrankedMatches.map(p=>
-    renderRow(p, null, 0, false, selectedModes, tiersByPlayer)
-  ).join('');
-  document.getElementById('tableBody').innerHTML=rankedHtml+unrankedHtml;
 }
 
-// keyboard shortcut
+async function searchPlayer(){
+  const q=document.getElementById('searchInput').value.trim();
+  if(!q){ showSearchToast('กรุณาพิมพ์ชื่อหรือ UID ก่อนค้นหา'); return; }
+  const qLower=q.toLowerCase();
+
+  // ค้นหาแบบตรงตัว UID ก่อน (แม่นยำสุด) ถ้าไม่เจอค่อยหาแบบชื่อ (บางส่วนก็ได้)
+  let p = players.find(x=>x.uid && String(x.uid)===q);
+  if(!p) p = players.find(x=>String(x.name||'').toLowerCase()===qLower);
+  if(!p) p = players.find(x=>String(x.name||'').toLowerCase().includes(qLower)||(x.uid&&String(x.uid).includes(q)));
+
+  if(p){
+    openModal(p.id, ...computeRankAndPts(p));
+    return;
+  }
+
+  // ไม่เจอในฐานข้อมูล — ถ้าพิมพ์มาเป็นตัวเลขล้วน (รูปแบบ UID) ลองไปถาม Free Fire API
+  // สร้างเป็น "การ์ดชั่วคราว" ให้ดู ไม่บันทึกอะไรลงฐานข้อมูล
+  if(!/^\d{5,15}$/.test(q)){
+    showSearchToast('ไม่พบผู้เล่นนี้ในระบบ');
+    return;
+  }
+
+  showSearchToast('กำลังค้นหาจาก Free Fire...');
+  try{
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(), 15000);
+    const r=await fetch(`/api/freefire-public?uid=${encodeURIComponent(q)}&region=th`, { signal: ctrl.signal });
+    clearTimeout(timer);
+
+    if(r.status===429){ showSearchToast('ค้นหาถี่เกินไป รอสักครู่แล้วลองใหม่'); return; }
+    if(!r.ok){ showSearchToast('ไม่พบผู้เล่นนี้ในระบบ'); return; }
+
+    const data=await r.json();
+    if(!data.nickname){ showSearchToast('ไม่พบผู้เล่นนี้ในระบบ'); return; }
+
+    // การ์ดชั่วคราว: มีแค่ชื่อ + UID เท่านั้น ไม่มีแรงค์/badge/tier ใดๆ ไม่ถูกบันทึกลง players[]
+    const tempPlayer={ id:`temp-${q}`, name:data.nickname, uid:q, region:'TH', avatar:null, badge:null };
+    openModal(null, null, 0, tempPlayer);
+  }catch(e){
+    const msg=e.name==='AbortError'?'Free Fire API ตอบช้าเกินไป':'ค้นหาไม่สำเร็จ';
+    showSearchToast(msg);
+  }
+}
+
+// คำนวณ rank + คะแนน/tier ของผู้เล่นตาม tab ที่เปิดอยู่ตอนนี้ (overall หรือ mode เดียว)
+function computeRankAndPts(p){
+  if(activeMode==='overall'){
+    const overallModes=modes.filter(m=>m.include_in_overall);
+    const overallModeIds=new Set(overallModes.map(m=>m.id));
+    const scoreMap={};
+    tiers.filter(t=>overallModeIds.has(t.mode_id)).forEach(t=>{
+      if(!scoreMap[t.player_id]) scoreMap[t.player_id]=0;
+      scoreMap[t.player_id]+=(TIER_SCORE[t.tier_type]||0);
+    });
+    if(scoreMap[p.id]===undefined) return [null,0];
+    const ranked=players.filter(x=>scoreMap[x.id]!==undefined)
+      .map((x,i)=>({...x,_idx:i}))
+      .sort((a,b)=>{const diff=scoreMap[b.id]-scoreMap[a.id];return diff!==0?diff:a._idx-b._idx;});
+    return [ranked.findIndex(x=>x.id===p.id)+1, scoreMap[p.id]];
+  }
+  const modeTiers=tiers.filter(t=>t.mode_id===activeMode);
+  const tierMap={};
+  modeTiers.forEach(t=>tierMap[t.player_id]=t);
+  if(!tierMap[p.id]) return [null,0];
+  const ranked=players.filter(x=>tierMap[x.id])
+    .sort((a,b)=>{
+      const diff=tierScore(tierMap[a.id]?.tier_type)-tierScore(tierMap[b.id]?.tier_type);
+      if(diff!==0) return diff;
+      return (tierMap[a.id]?.id??0)-(tierMap[b.id]?.id??0);
+    });
+  return [ranked.findIndex(x=>x.id===p.id)+1, tierMap[p.id].tier_type];
+}
+
+function showSearchToast(msg){
+  let el=document.getElementById('searchToast');
+  if(!el){
+    el=document.createElement('div');
+    el.id='searchToast';
+    el.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border2);color:var(--text1);padding:10px 18px;border-radius:10px;font-size:.82rem;z-index:200;box-shadow:0 12px 30px -10px #000000a0;opacity:0;transition:opacity .2s';
+    document.body.appendChild(el);
+  }
+  el.textContent=msg;
+  el.style.opacity='1';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{el.style.opacity='0';},2200);
+}
 document.addEventListener('keydown',e=>{
   if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){
     e.preventDefault();
@@ -556,19 +618,20 @@ document.addEventListener('keydown',e=>{
 
 load();
 
-function openModal(pid, rank, pts){
-  const p=players.find(x=>x.id===pid);
+function openModal(pid, rank, pts, tempPlayer){
+  const p = tempPlayer || players.find(x=>x.id===pid);
   if(!p) return;
+  const isTemp = !!tempPlayer;
   const playerName=esc(p.name);
   const reg=esc(p.region||'TH');
   const badge=esc(p.badge);
   const bclass=badgeClass(p.badge);
 
-  // Overall shows all modes. A single mode shows only the selected mode.
+  // Overall shows all modes. A single mode shows only the selected mode. (การ์ดชั่วคราวไม่มี tier เลย)
   const tiersByP={};
-  tiers.filter(t=>t.player_id===pid).forEach(t=>tiersByP[t.mode_id]=t.tier_type);
+  if(!isTemp) tiers.filter(t=>t.player_id===pid).forEach(t=>tiersByP[t.mode_id]=t.tier_type);
   const modalModes=activeMode==='overall'?modes:modes.filter(m=>m.id===activeMode);
-  const hasTiers=modalModes.some(m=>tiersByP[m.id]);
+  const hasTiers=!isTemp && modalModes.some(m=>tiersByP[m.id]);
   const tiersHtml=modalModes.map(m=>{
     const tier=tiersByP[m.id];
     if(!tier) return'';
@@ -599,6 +662,7 @@ function openModal(pid, rank, pts){
     <div class="modal-avatar${modalRankImg?' locked':''}">${modalRankImg?`<img src="${modalRankImg}" alt="Rank ${rank}">`:(p.avatar?`<img src="${esc(p.avatar)}" alt="${playerName}">`:esc((p.name?.[0]||'?').toUpperCase()))}</div>
     <div class="modal-name">${playerName}</div>
     ${p.uid?`<div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em">UID: <span style="color:var(--text2);font-weight:600">${esc(p.uid)}</span></div>`:''}
+    ${isTemp?`<div style="font-size:0.68rem;color:var(--accent);background:var(--accent-soft);display:inline-block;padding:2px 10px;border-radius:20px;margin-bottom:6px">⚡ ข้อมูลสดจาก Free Fire · ยังไม่มีในระบบ</div>`:''}
     ${p.badge?`<div><span class="modal-badge ${bclass}">◈ ${badge}</span></div>`:''}
     <div class="modal-region">${regionLabels[reg]||reg}</div>
     <div class="modal-section">
@@ -656,6 +720,7 @@ function attachRipples(){
   });
 }
 
+// attach after every render
 const _origRender=render;
 render=function(...a){_origRender(...a);requestAnimationFrame(attachRipples)};
 </script>
