@@ -328,12 +328,10 @@ async function apiRpc(fn, ms=8000){
 }
 
 async function load(){
-  // แสดง tab Overall ทันทีก่อน API ตอบ ให้กดได้เลย
   document.getElementById('tabsBar').innerHTML=`<button class="tab-btn active" onclick="setMode('overall')"><span class="tab-icon">🏆</span>Overall</button>`;
   document.getElementById('serverInfo').style.display='flex';
 
   try{
-    // ลองยิง request เดียว (RPC รวม modes+players+player_tiers) ก่อน ลด round-trip จาก 3 เหลือ 1
     try{
       const data = await apiRpc('get_leaderboard_data');
       modes = data.modes || [];
@@ -395,13 +393,14 @@ function getRankImg(rank){
   return '';
 }
 function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
-  const rankClass=rank<=3?` r${rank}`:'';
-  const rankBoxClass=rank>3?' normal':'';
+  const isUnranked = rank===null || rank===undefined;
+  const rankClass=(!isUnranked && rank<=3)?` r${rank}`:'';
+  const rankBoxClass=(isUnranked || rank>3)?' normal':'';
   const playerName=esc(p.name);
   const reg=esc(p.region||'TH');
   const regClass=String(p.region||'TH').replace(/[^a-zA-Z0-9_-]/g,'');
   const badge=esc(p.badge);
-  const rankImg=getRankImg(rank);
+  const rankImg=isUnranked?'':getRankImg(rank);
   const av=rankImg
     ?`<div class="avatar avatar-lockedimg"><img src="${rankImg}" alt="Rank ${rank}" loading="lazy"></div>`
     :(p.avatar
@@ -409,11 +408,13 @@ function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
       :`<div class="avatar">${esc((p.name?.[0]||'?').toUpperCase())}</div>`);
 
   const bclass=badgeClass(p.badge);
-  const scoreText=isOverall?`${scoreOrTier} pts`:scoreOrTier;
-  const ptsHtml=isOverall?` <span class="badge-pts">(${scoreText})</span>`:` <span class="tier-mini ${TIER_CLASS[scoreOrTier]||'t-F'}">${scoreOrTier}</span>`;
-  const badgeHtml=p.badge
-    ?`<span class="player-badge ${bclass}">◈ ${badge}${ptsHtml}</span>`
-    :`<span class="${isOverall?'badge-pts':`tier-mini ${TIER_CLASS[scoreOrTier]||'t-F'}`}">${scoreText}</span>`;
+  const scoreText=isUnranked?'Unranked':(isOverall?`${scoreOrTier} pts`:scoreOrTier);
+  const ptsHtml=isUnranked?'':(isOverall?` <span class="badge-pts">(${scoreText})</span>`:` <span class="tier-mini ${TIER_CLASS[scoreOrTier]||'t-F'}">${scoreOrTier}</span>`);
+  const badgeHtml=isUnranked
+    ?`<span class="badge-pts" style="opacity:.7">Unranked</span>`
+    :(p.badge
+      ?`<span class="player-badge ${bclass}">◈ ${badge}${ptsHtml}</span>`
+      :`<span class="${isOverall?'badge-pts':`tier-mini ${TIER_CLASS[scoreOrTier]||'t-F'}`}">${scoreText}</span>`);
 
   // tiers column — เฉพาะ mode ที่มี tier เท่านั้น
   const modesForRight = allModes.length ? allModes : [];
@@ -427,8 +428,8 @@ function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
     </div>`;
   }).join('');
 
-  return`<div class="t-row${rankClass}" onclick="openModal(${jsArg(p.id)},${rank},${isOverall?scoreOrTier:0})" style="cursor:pointer">
-    <div class="rank-wrap"><div class="rank-box${rankBoxClass}">${rank}</div></div>
+  return`<div class="t-row${rankClass}${isUnranked?' unranked':''}" onclick="openModal(${jsArg(p.id)},${isUnranked?'null':rank},${isOverall?scoreOrTier:0})" style="cursor:pointer${isUnranked?';opacity:.65':''}">
+    <div class="rank-wrap"><div class="rank-box${rankBoxClass}">${isUnranked?'UR':rank}</div></div>
     <div class="player-cell">
       ${av}
       <div class="player-info">
@@ -467,6 +468,14 @@ function render(){
       return diff!==0?diff:a._idx-b._idx;
     });
 
+    // ค้นหาแล้ว: ผู้เล่นที่มีชื่อ/UID ตรงกัน แต่ยังไม่มีคะแนนเลย (ไม่เคยได้ tier ใน mode ที่นับ overall)
+    // ให้โชว์ต่อท้ายแบบ "Unranked" แทนที่จะหายไปเงียบๆ
+    let unrankedMatches=[];
+    if(q){
+      unrankedMatches=players.filter(p=>scoreMap[p.id]===undefined &&
+        (String(p.name||'').toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q))));
+    }
+
     document.getElementById('heroStats').innerHTML=`
       <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่นทั้งหมด</div><div class="stat-val">${list.length}<small>คน</small></div></div></div>
       <div class="stat-card"><span class="stat-icon">🎮</span><div class="stat-info"><div class="stat-label">Mode ที่นับ</div><div class="stat-val">${overallModes.length}<small>mode</small></div></div></div>
@@ -474,13 +483,17 @@ function render(){
     `;
 
     document.getElementById('tierHeader').textContent='TIERS';
-    if(!list.length){
+    if(!list.length && !unrankedMatches.length){
       document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีข้อมูล Overall</p></div>`;
       return;
     }
-    document.getElementById('tableBody').innerHTML=list.map((p,i)=>
+    const rankedHtml=list.map((p,i)=>
       renderRow(p, i+1, scoreMap[p.id], true, overallModes, tiersByPlayer)
     ).join('');
+    const unrankedHtml=unrankedMatches.map(p=>
+      renderRow(p, null, 0, true, overallModes, tiersByPlayer)
+    ).join('');
+    document.getElementById('tableBody').innerHTML=rankedHtml+unrankedHtml;
     return;
   }
 
@@ -498,6 +511,13 @@ function render(){
     return (tierMap[a.id]?.id??0)-(tierMap[b.id]?.id??0);
   });
 
+  // ค้นหาแล้ว: ผู้เล่นที่ชื่อ/UID ตรงกัน แต่ยังไม่มี tier ใน mode นี้ → โชว์ต่อท้ายแบบ Unranked
+  let unrankedMatches=[];
+  if(q){
+    unrankedMatches=players.filter(p=>!tierMap[p.id] &&
+      (String(p.name||'').toLowerCase().includes(q)||(p.uid&&String(p.uid).includes(q))));
+  }
+
   const counts={};
   TIER_ORDER.forEach(t=>counts[t]=0);
   modeTiers.forEach(t=>{if(counts[t.tier_type]!==undefined)counts[t.tier_type]++});
@@ -513,13 +533,17 @@ function render(){
   const selectedModes=modes.filter(m=>m.id===activeMode);
   document.getElementById('tierHeader').textContent='TIER';
 
-  if(!list.length){
+  if(!list.length && !unrankedMatches.length){
     document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีผู้เล่นใน mode นี้</p></div>`;
     return;
   }
-  document.getElementById('tableBody').innerHTML=list.map((p,i)=>
+  const rankedHtml=list.map((p,i)=>
     renderRow(p, i+1, tierMap[p.id]?.tier_type||'F', false, selectedModes, tiersByPlayer)
   ).join('');
+  const unrankedHtml=unrankedMatches.map(p=>
+    renderRow(p, null, 0, false, selectedModes, tiersByPlayer)
+  ).join('');
+  document.getElementById('tableBody').innerHTML=rankedHtml+unrankedHtml;
 }
 
 // keyboard shortcut
@@ -567,7 +591,8 @@ function openModal(pid, rank, pts){
     :(currentTier?`${currentTier} tier / ${totalPts} overall pts`:`${totalPts} overall pts`);
 
   const regionLabels={'TH':'Thailand','AS':'Asia','EU':'Europe','NA':'North America'};
-  const modalRankImg=getRankImg(rank);
+  const isUnranked = rank===null || rank===undefined;
+  const modalRankImg=isUnranked?'':getRankImg(rank);
 
   document.getElementById('modalInner').innerHTML=`
     <button class="modal-close" onclick="closeModal()">✕</button>
@@ -579,8 +604,11 @@ function openModal(pid, rank, pts){
     <div class="modal-section">
       <div class="modal-section-title">Position</div>
       <div class="modal-position-box">
-        <div class="modal-pos-num">${rank}.</div>
-        <div class="modal-pos-detail">🏆 ${positionLabel} <span style="color:var(--text3);font-weight:500">(${positionMeta})</span></div>
+        ${isUnranked
+          ?`<div class="modal-pos-num" style="opacity:.6">–</div>
+             <div class="modal-pos-detail">🚫 <span style="color:var(--text2);font-weight:600">Unranked</span> <span style="color:var(--text3);font-weight:500">ยังไม่มีข้อมูลแรงค์</span></div>`
+          :`<div class="modal-pos-num">${rank}.</div>
+             <div class="modal-pos-detail">🏆 ${positionLabel} <span style="color:var(--text3);font-weight:500">(${positionMeta})</span></div>`}
       </div>
     </div>
     ${hasTiers?`<div class="modal-section">
@@ -628,7 +656,6 @@ function attachRipples(){
   });
 }
 
-// attach after every render
 const _origRender=render;
 render=function(...a){_origRender(...a);requestAnimationFrame(attachRipples)};
 </script>
