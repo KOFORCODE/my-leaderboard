@@ -129,6 +129,7 @@ textarea{resize:vertical;min-height:80px}
     <button class="atab active" data-tab="players" onclick="switchTab('players', this)">👤 ผู้เล่น</button>
     <button class="atab" data-tab="modes" onclick="switchTab('modes', this)">🎮 Game Mode</button>
     <button class="atab" data-tab="embed" onclick="switchTab('embed', this)">🔗 Embed</button>
+    <button class="atab" data-tab="settings" onclick="switchTab('settings', this)">⚙️ ตั้งค่าเว็บ</button>
   </div>
 
   <!-- PLAYERS SECTION -->
@@ -268,6 +269,25 @@ textarea{resize:vertical;min-height:80px}
     </div>
   </div>
 
+  <!-- SETTINGS SECTION -->
+  <div class="section" id="sec-settings">
+    <div class="card">
+      <div class="card-title">⚙️ ลิงก์บนแถบเมนูหน้าเว็บ</div>
+      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.2rem">แก้ลิงก์ปุ่มบนแถบเมนูของหน้าเว็บหลัก ไม่ต้องแก้โค้ด</p>
+
+      <label>💬 ลิงก์ Discord</label>
+      <input type="text" id="s_discord" placeholder="https://discord.gg/xxxxxxx" style="margin-bottom:1rem">
+
+      <label>🏆 ลิงก์ปุ่ม Rankings</label>
+      <input type="text" id="s_rankings" placeholder="เว้นว่างไว้ได้ถ้ายังไม่ใช้" style="margin-bottom:1rem">
+
+      <label>📄 ลิงก์ปุ่ม API Docs</label>
+      <input type="text" id="s_apidocs" placeholder="เว้นว่างไว้ได้ถ้ายังไม่ใช้" style="margin-bottom:1.2rem">
+
+      <button class="btn btn-primary" onclick="saveSiteSettings()">💾 บันทึก</button>
+    </div>
+  </div>
+
 </main>
 </div>
 
@@ -396,7 +416,7 @@ async function lookupFreeFirePlayer(){
   try{
     toast('กำลังดึงข้อมูล Free Fire...');
     const ctrl = new AbortController();
-    const timer = setTimeout(()=>ctrl.abort(), 10000);
+    const timer = setTimeout(()=>ctrl.abort(), 25000);
     const r = await fetch(url, {
       headers: { 'x-admin-pw': ADMIN_PW_SESSION || sessionStorage.getItem('admin_pw') || '' },
       signal: ctrl.signal
@@ -527,6 +547,31 @@ async function init(){
   if(modes.length) activeModeId=modes[0].id;
   buildModeSelect();
   renderPlayerList();
+  loadSiteSettings();
+}
+
+async function loadSiteSettings(){
+  try{
+    const rows = await api('site_settings?id=eq.1&select=*');
+    const s = rows?.[0] || {};
+    document.getElementById('s_discord').value = s.discord_url || '';
+    document.getElementById('s_rankings').value = s.rankings_url || '';
+    document.getElementById('s_apidocs').value = s.api_docs_url || '';
+  }catch(e){
+    console.warn('[loadSiteSettings] โหลดไม่สำเร็จ (อาจยังไม่ได้รัน SQL สร้างตาราง site_settings):', e.message);
+  }
+}
+
+async function saveSiteSettings(){
+  const discord_url = document.getElementById('s_discord').value.trim() || null;
+  const rankings_url = document.getElementById('s_rankings').value.trim() || null;
+  const api_docs_url = document.getElementById('s_apidocs').value.trim() || null;
+  try{
+    await api('site_settings?id=eq.1', 'PATCH', { discord_url, rankings_url, api_docs_url });
+    toast('บันทึกลิงก์เรียบร้อย');
+  }catch(e){
+    toast('บันทึกไม่สำเร็จ: '+e.message, false);
+  }
 }
 
 function buildModeSelect(selectedModeId=null){
