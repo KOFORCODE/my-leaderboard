@@ -40,10 +40,10 @@ nav{background:#12141ce6;backdrop-filter:blur(14px) saturate(140%);-webkit-backd
 .nav-link:hover{color:var(--text1);background:#ffffff09}
 .nav-right{display:flex;align-items:center;gap:10px}
 .search-wrap{position:relative}
-.search-wrap .search-btn{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;padding:0;border:none;background:transparent;color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color .15s,background .15s}
-.search-wrap .search-btn:hover{color:var(--accent);background:#ffffff0c}
-.search-wrap .search-btn svg{width:14px;height:14px;pointer-events:none}
-.search-wrap input{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:8px 34px 8px 34px;color:var(--text1);font-size:.82rem;font-family:var(--font-body);width:216px;outline:none;transition:border .2s,background .2s}
+.search-wrap .search-btn{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:32px;height:32px;padding:0;border:none;background:var(--accent-soft);color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color .15s,background .15s;font-weight:700}
+.search-wrap .search-btn:hover{color:var(--accent);background:#f2b93e30}
+.search-wrap .search-btn svg{width:18px;height:18px;pointer-events:none}
+.search-wrap input{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:8px 34px 8px 12px;color:var(--text1);font-size:.82rem;font-family:var(--font-body);width:216px;outline:none;transition:border .2s,background .2s}
 .search-wrap input:focus{border-color:#f2b93e55;background:var(--bg3)}
 .search-wrap input::placeholder{color:var(--text3)}
 .kbd{background:var(--bg3);border:1px solid var(--border2);color:var(--text3);font-family:var(--font-mono);font-size:.62rem;padding:2px 6px;border-radius:5px;position:absolute;right:9px;top:50%;transform:translateY(-50%)}
@@ -192,7 +192,9 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   nav{padding:0 1rem}
   main,.hero{padding-left:1rem;padding-right:1rem}
   .hero{flex-wrap:wrap}
-  .nav-center{display:none}
+  .nav-center{display:flex;gap:6px}
+  .nav-link{display:none}
+  #discordLink{display:block;padding:6px 10px;font-size:0.7rem}
   .search-wrap input{width:150px}
   .server-info{display:none!important}
 }
@@ -238,15 +240,14 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
     <div class="logo-text"><span>Comboo</span> 500</div>
   </div>
   <div class="nav-center">
-    <a class="nav-link" href="#">🏆 Rankings</a>
-    <a class="nav-link" href="#">💬 Discord</a>
-    <a class="nav-link" href="#">📄 API Docs</a>
+    <a class="nav-link" href="#" id="rankingsLink">🏆 Rankings</a>
+    <a class="nav-link" href="#" id="discordLink">💬 Discord</a>
+    <a class="nav-link" href="#" id="apiDocsLink">📄 API Docs</a>
   </div>
   <div class="nav-right">
     <div class="search-wrap">
-      <button type="button" class="search-btn" onclick="searchPlayer()" aria-label="ค้นหา"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
       <input type="text" id="searchInput" placeholder="พิมพ์ชื่อ/UID แล้วกด Enter..." onkeydown="if(event.key==='Enter')searchPlayer()">
-      <span class="kbd">/</span>
+      <button type="button" class="search-btn" onclick="searchPlayer()" aria-label="ค้นหา"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></button>
     </div>
   </div>
 </nav>
@@ -345,11 +346,20 @@ async function load(){
       // ยังไม่ได้สร้าง function get_leaderboard_data ใน Supabase หรือ RPC ล้มเหลว
       // → fallback ไปยิง 3 request แบบเดิม กันเว็บพัง
       console.warn('[load] RPC ล้มเหลว, fallback เป็น 3 requests:', rpcErr.message);
-      [modes,players,tiers]=await Promise.all([
+      const [modesData,playersData,tiersData,settingsData]=await Promise.all([
         apiWithTimeout('modes?order=sort_order'),
         apiWithTimeout('players?order=name'),
-        apiWithTimeout('player_tiers?select=*')
+        apiWithTimeout('player_tiers?select=*'),
+        api('site_settings?id=eq.1').catch(()=>[])
       ]);
+      modes=modesData;
+      players=playersData;
+      tiers=tiersData;
+      const settings=settingsData?.[0];
+      if(settings?.discord_url){
+        const discordLink=document.getElementById('discordLink');
+        if(discordLink) discordLink.href=settings.discord_url;
+      }
     }
     renderTabs();
     render();
@@ -661,8 +671,7 @@ function openModal(pid, rank, pts, tempPlayer){
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-avatar${modalRankImg?' locked':''}">${modalRankImg?`<img src="${modalRankImg}" alt="Rank ${rank}">`:(p.avatar?`<img src="${esc(p.avatar)}" alt="${playerName}">`:esc((p.name?.[0]||'?').toUpperCase()))}</div>
     <div class="modal-name">${playerName}</div>
-    ${p.uid?`<div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em">UID: <span style="color:var(--text2);font-weight:600">${esc(p.uid)}</span></div>`:''}
-    ${isTemp?`<div style="font-size:0.68rem;color:var(--accent);background:var(--accent-soft);display:inline-block;padding:2px 10px;border-radius:20px;margin-bottom:6px">⚡ ข้อมูลสดจาก Free Fire · ยังไม่มีในระบบ</div>`:''}
+    ${p.uid?`<div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em;text-align:center">UID: <span style="color:var(--text2);font-weight:600">${esc(p.uid)}</span><button onclick="navigator.clipboard.writeText('${p.uid}');this.textContent='✓';setTimeout(()=>this.textContent='📋',1500)" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.65rem;padding:0;margin-left:2px;transition:all .2s">📋</button></div>`:''}
     ${p.badge?`<div><span class="modal-badge ${bclass}">◈ ${badge}</span></div>`:''}
     <div class="modal-region">${regionLabels[reg]||reg}</div>
     <div class="modal-section">
@@ -675,9 +684,12 @@ function openModal(pid, rank, pts, tempPlayer){
              <div class="modal-pos-detail">🏆 ${positionLabel} <span style="color:var(--text3);font-weight:500">(${positionMeta})</span></div>`}
       </div>
     </div>
-    ${hasTiers?`<div class="modal-section">
+    ${hasTiers||isTemp?`<div class="modal-section">
       <div class="modal-section-title">Tiers</div>
-      <div class="modal-tiers-box" style="flex-direction:column;gap:6px">${tiersHtml}</div>
+      <div class="modal-tiers-box" style="flex-direction:column;gap:6px">${hasTiers?tiersHtml:'<div style="color:var(--text3);text-align:center;padding:1rem;font-size:0.85rem">ยังไม่มี Tier</div>'}</div>
+    </div>`:''}
+    ${isTemp?`<div class="modal-section" style="background:var(--accent-soft);border-radius:10px;padding:10px;border:1px solid var(--accent)33">
+      <a href="${document.getElementById('discordLink')?.href||'#'}" target="_blank" style="font-size:0.8rem;color:var(--accent);font-weight:600;text-align:center;text-decoration:none;display:block">💬 ${playerName}</a>
     </div>`:''}
   `;
 
