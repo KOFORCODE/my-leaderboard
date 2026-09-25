@@ -128,7 +128,6 @@ textarea{resize:vertical;min-height:80px}
   <div class="admin-tabs">
     <button class="atab active" data-tab="players" onclick="switchTab('players', this)">👤 ผู้เล่น</button>
     <button class="atab" data-tab="modes" onclick="switchTab('modes', this)">🎮 Game Mode</button>
-    <button class="atab" data-tab="embed" onclick="switchTab('embed', this)">🔗 Embed</button>
     <button class="atab" data-tab="settings" onclick="switchTab('settings', this)">⚙️ ตั้งค่าเว็บ</button>
   </div>
 
@@ -238,37 +237,6 @@ textarea{resize:vertical;min-height:80px}
       <button class="btn btn-primary" style="margin-top:12px" onclick="addMode()">เพิ่ม Mode</button>
     </div>
   </div>
-  <!-- EMBED SECTION -->
-  <div class="section" id="sec-embed">
-    <div class="card">
-      <div class="card-title">🔗 Embed Tier List</div>
-      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.2rem">คัดลอก code ด้านล่างไปวางในเว็บหรือ Discord server ได้เลย</p>
-
-      <label>เลือก Mode ที่จะ Embed</label>
-      <select id="embedMode" onchange="updateEmbed()" style="margin-bottom:1rem">
-        <option value="overall">🏆 Overall</option>
-      </select>
-
-      <label>ขนาด</label>
-      <div style="display:flex;gap:8px;margin-bottom:1rem">
-        <button class="btn btn-ghost" id="esize-sm" onclick="setEmbedSize('sm')" style="font-size:0.8rem">เล็ก (400×600)</button>
-        <button class="btn btn-ghost" id="esize-md" onclick="setEmbedSize('md')" style="font-size:0.8rem;background:var(--bg3);color:var(--text1)">กลาง (600×800)</button>
-        <button class="btn btn-ghost" id="esize-lg" onclick="setEmbedSize('lg')" style="font-size:0.8rem">ใหญ่ (900×700)</button>
-      </div>
-
-      <label>HTML Embed Code</label>
-      <div style="position:relative">
-        <textarea id="embedCode" readonly style="font-family:monospace;font-size:0.78rem;line-height:1.6;min-height:80px;background:var(--bg0);border-color:var(--border2);color:var(--text2);cursor:text"></textarea>
-        <button class="btn btn-ghost" onclick="copyEmbed()" style="position:absolute;top:8px;right:8px;padding:4px 10px;font-size:0.75rem" id="copyEmbedBtn">📋 คัดลอก</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">👁️ Preview</div>
-      <div id="embedPreview" style="border-radius:10px;overflow:hidden;border:1px solid var(--border2)"></div>
-    </div>
-  </div>
-
   <!-- SETTINGS SECTION -->
   <div class="section" id="sec-settings">
     <div class="card">
@@ -469,48 +437,6 @@ function switchTab(name, el){
     if(btn) btn.classList.add('active');
   }
   if(name==='modes') renderModes();
-  if(name==='embed') initEmbed();
-}
-
-// EMBED
-let embedSize='md';
-const embedSizes={sm:{w:400,h:600},md:{w:600,h:800},lg:{w:900,h:700}};
-
-function initEmbed(){
-  const sel=document.getElementById('embedMode');
-  sel.innerHTML=`<option value="overall">🏆 Overall</option>`+
-    modes.map(m=>`<option value="${m.id}">${m.icon||'🎮'} ${m.name}</option>`).join('');
-  updateEmbed();
-}
-
-function setEmbedSize(s){
-  embedSize=s;
-  ['sm','md','lg'].forEach(k=>{
-    const b=document.getElementById('esize-'+k);
-    b.style.background=k===s?'var(--bg3)':'';
-    b.style.color=k===s?'var(--text1)':'';
-  });
-  updateEmbed();
-}
-
-function updateEmbed(){
-  const mode=document.getElementById('embedMode').value;
-  const {w,h}=embedSizes[embedSize];
-  const base=location.origin+'/index.html';
-  const src=mode==='overall'?base:`${base}?mode=${mode}`;
-  const code=`<iframe src="${src}" width="${w}" height="${h}" frameborder="0" style="border-radius:12px;overflow:hidden"></iframe>`;
-  document.getElementById('embedCode').value=code;
-  document.getElementById('embedPreview').innerHTML=
-    `<iframe src="${src}" width="100%" height="${h}" frameborder="0" style="display:block"></iframe>`;
-}
-
-function copyEmbed(){
-  const code=document.getElementById('embedCode').value;
-  navigator.clipboard.writeText(code).then(()=>{
-    const btn=document.getElementById('copyEmbedBtn');
-    btn.textContent='✅ คัดลอกแล้ว';
-    setTimeout(()=>btn.textContent='📋 คัดลอก',2000);
-  });
 }
 
 // TIER GRID
