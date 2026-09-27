@@ -559,7 +559,8 @@ async function searchPlayer(){
     return;
   }
 
-  
+  // ไม่เจอในฐานข้อมูล — ถ้าพิมพ์มาเป็นตัวเลขล้วน (รูปแบบ UID) ลองไปถาม Free Fire API
+  // สร้างเป็น "การ์ดชั่วคราว" ให้ดู ไม่บันทึกอะไรลงฐานข้อมูล
   if(!/^\d{5,15}$/.test(q)){
     showSearchToast('ไม่พบผู้เล่นนี้ในระบบ');
     return;
@@ -699,7 +700,8 @@ function openModal(pid, rank, pts, tempPlayer){
       <div class="modal-tiers-box" style="flex-direction:column;gap:6px">${hasTiers?tiersHtml:'<div style="color:var(--text3);text-align:center;padding:1rem;font-size:0.85rem">ยังไม่มี Tier</div>'}</div>
     </div>`:''}
     ${isTemp?`<div class="modal-section" style="background:var(--accent-soft);border-radius:10px;padding:10px;border:1px solid var(--accent)33">
-      <a href="${document.getElementById('discordLink')?.href||'#'}" target="_blank" style="font-size:0.8rem;color:var(--accent);font-weight:600;text-align:center;text-decoration:none;display:block">💬 ${playerName}</a>
+      <div style="font-size:0.75rem;color:var(--text2);text-align:center;margin-bottom:8px">ไม่พบในระบบ</div>
+      <a href="${document.getElementById('discordLink')?.href||'#'}" target="_blank" style="font-size:0.8rem;color:var(--accent);font-weight:600;text-align:center;text-decoration:none;display:block">💬 เทสเทียร์ตัวเองกดตรงนี้</a>
     </div>`:''}
   `;
 
