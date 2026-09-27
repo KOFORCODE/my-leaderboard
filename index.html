@@ -241,7 +241,7 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   </div>
   <div class="nav-center">
     <a class="nav-link" href="#" id="rankingsLink">🏆 Rankings</a>
-    <a class="nav-link" href="#" id="discordLink">💬 Discord</a>
+    <a class="nav-link" href="#" target="_blank" id="discordLink">💬 Discord</a>
     <a class="nav-link" href="#" id="apiDocsLink">📄 API Docs</a>
   </div>
   <div class="nav-right">
@@ -346,21 +346,32 @@ async function load(){
       // ยังไม่ได้สร้าง function get_leaderboard_data ใน Supabase หรือ RPC ล้มเหลว
       // → fallback ไปยิง 3 request แบบเดิม กันเว็บพัง
       console.warn('[load] RPC ล้มเหลว, fallback เป็น 3 requests:', rpcErr.message);
-      const [modesData,playersData,tiersData,settingsData]=await Promise.all([
+      const [modesData,playersData,tiersData]=await Promise.all([
         apiWithTimeout('modes?order=sort_order'),
         apiWithTimeout('players?order=name'),
-        apiWithTimeout('player_tiers?select=*'),
-        api('site_settings?id=eq.1').catch(()=>[])
+        apiWithTimeout('player_tiers?select=*')
       ]);
       modes=modesData;
       players=playersData;
       tiers=tiersData;
-      const settings=settingsData?.[0];
-      if(settings?.discord_url){
-        const discordLink=document.getElementById('discordLink');
-        if(discordLink) discordLink.href=settings.discord_url;
-      }
     }
+
+    // โหลด settings เสมอ (ทั้งเคส RPC สำเร็จและล้มเหลว)
+    const settingsData = await api('site_settings?id=eq.1').catch(()=>[]);
+    const settings = settingsData?.[0];
+    if(settings?.discord_url){
+      const discordLink = document.getElementById('discordLink');
+      if(discordLink) discordLink.href = settings.discord_url;
+    }
+    if(settings?.rankings_url){
+      const rankingsLink = document.getElementById('rankingsLink');
+      if(rankingsLink) rankingsLink.href = settings.rankings_url;
+    }
+    if(settings?.api_docs_url){
+      const apiDocsLink = document.getElementById('apiDocsLink');
+      if(apiDocsLink) apiDocsLink.href = settings.api_docs_url;
+    }
+
     renderTabs();
     render();
   }catch(err){
@@ -548,8 +559,7 @@ async function searchPlayer(){
     return;
   }
 
-  // ไม่เจอในฐานข้อมูล — ถ้าพิมพ์มาเป็นตัวเลขล้วน (รูปแบบ UID) ลองไปถาม Free Fire API
-  // สร้างเป็น "การ์ดชั่วคราว" ให้ดู ไม่บันทึกอะไรลงฐานข้อมูล
+  
   if(!/^\d{5,15}$/.test(q)){
     showSearchToast('ไม่พบผู้เล่นนี้ในระบบ');
     return;
