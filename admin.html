@@ -138,7 +138,7 @@ body.readonly .edit-only{display:none!important}
   <div class="section active" id="sec-players">
 
     <!-- ADD/EDIT FORM -->
-    <div class="card edit-only">
+    <div class="card">
       <div class="card-title" id="formLabel">➕ เพิ่มผู้เล่น</div>
       <div class="form-grid">
         <div>
@@ -173,15 +173,15 @@ body.readonly .edit-only{display:none!important}
             <option value="EUROPE">EUROPE — Europe</option>
           </select>
         </div>
-        <div>
+        <div class="edit-only">
           <label>Badge / ตำแหน่ง (ไม่บังคับ)</label>
           <input type="text" id="f_badge" placeholder="เช่น Pro Player, Staff">
         </div>
-        <div>
+        <div class="edit-only">
           <label>URL รูปภาพ</label>
           <input type="url" id="f_avatar" placeholder="https://..." oninput="previewImg()">
         </div>
-        <div class="form-full">
+        <div class="form-full edit-only">
           <label>Preview รูป</label>
           <div class="img-preview" id="imgPreview">🖼️</div>
         </div>
@@ -195,7 +195,7 @@ body.readonly .edit-only{display:none!important}
           <input type="hidden" id="f_tier">
         </div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:14px">
+      <div class="edit-only" style="display:flex;gap:8px;margin-top:14px">
         <button class="btn btn-primary" onclick="savePlayer()">💾 บันทึก</button>
         <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">ยกเลิก</button>
       </div>
@@ -320,7 +320,9 @@ function applyRole(){
   const ro = ROLE === 'tester';
   document.body.classList.toggle('readonly', ro);
   const b = document.getElementById('roleBadge');
-  if(b) b.textContent = ro ? 'TESTER · ดูอย่างเดียว' : 'ADMIN';
+  if(b) b.textContent = ro ? 'TESTER · เพิ่มเท่านั้น' : 'ADMIN';
+  const fl = document.getElementById('formLabel');
+  if(ro && fl) fl.textContent = '➕ เพิ่มผู้เล่นและ Tier';
   ['s_discord','s_rankings','s_apidocs'].forEach(id=>{
     const e = document.getElementById(id);
     if(e) e.disabled = ro;
