@@ -49,9 +49,9 @@ export default async function handler(req, res) {
 
   const method = req.method;
 
-  // tester อ่านได้อย่างเดียว: บล็อกทุก method ที่ไม่ใช่ GET
-  if (role === 'tester' && method !== 'GET') {
-    return res.status(403).json({ error: 'บัญชี tester ดูข้อมูลได้อย่างเดียว' });
+  // tester: อ่านได้ (GET) และสามารถเพิ่มข้อมูลได้ (POST) แต่แก้ไขหรือลบไม่ได้ (PUT/PATCH/DELETE)
+  if (role === 'tester' && !['GET', 'POST'].includes(method)) {
+    return res.status(403).json({ error: 'บัญชี tester สามารถดูและเพิ่มข้อมูลได้เท่านั้น แก้ไขหรือลบไม่ได้' });
   }
 
   const url = `${SUPABASE_URL}/rest/v1/${path}`;
