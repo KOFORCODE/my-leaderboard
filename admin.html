@@ -92,6 +92,9 @@ textarea{resize:vertical;min-height:80px}
 
 .mode-item{display:flex;align-items:center;gap:10px;background:var(--bg2);border-radius:8px;padding:10px 14px;margin-bottom:6px}
 
+/* READ-ONLY (tester) — ซ่อนทุกอย่างที่แก้ไขได้ */
+body.readonly .edit-only{display:none!important}
+
 @media(max-width:600px){
   .form-grid{grid-template-columns:1fr}
   main{padding:1rem}
@@ -116,7 +119,7 @@ textarea{resize:vertical;min-height:80px}
 <nav>
   <div style="display:flex;align-items:center;gap:10px">
     <div class="logo"><span>Comboo</span> 500 Admin</div>
-    <span class="badge-admin">ADMIN</span>
+    <span class="badge-admin" id="roleBadge">ADMIN</span>
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <a href="/" style="color:var(--text3);font-size:0.8rem;text-decoration:none">← ดูหน้าเว็บ</a>
@@ -135,7 +138,7 @@ textarea{resize:vertical;min-height:80px}
   <div class="section active" id="sec-players">
 
     <!-- ADD/EDIT FORM -->
-    <div class="card">
+    <div class="card edit-only">
       <div class="card-title" id="formLabel">➕ เพิ่มผู้เล่น</div>
       <div class="form-grid">
         <div>
@@ -217,7 +220,7 @@ textarea{resize:vertical;min-height:80px}
       <div class="card-title">Game Mode ปัจจุบัน</div>
       <div id="modeList"></div>
     </div>
-    <div class="card">
+    <div class="card edit-only">
       <div class="card-title">➕ เพิ่ม Game Mode</div>
       <div class="form-grid">
         <div><label>ชื่อ Mode</label><input type="text" id="m_name" placeholder="เช่น Sword, Bow"></div>
@@ -252,7 +255,7 @@ textarea{resize:vertical;min-height:80px}
       <label>📄 ลิงก์ปุ่ม API Docs</label>
       <input type="text" id="s_apidocs" placeholder="เว้นว่างไว้ได้ถ้ายังไม่ใช้" style="margin-bottom:1.2rem">
 
-      <button class="btn btn-primary" onclick="saveSiteSettings()">💾 บันทึก</button>
+      <button class="btn btn-primary edit-only" onclick="saveSiteSettings()">💾 บันทึก</button>
     </div>
   </div>
 
@@ -288,7 +291,9 @@ async function doLogin(){
       return;
     }
     ADMIN_PW_SESSION = pw;
+    ROLE = r.headers.get('x-role') || 'admin';
     sessionStorage.setItem('admin_pw', pw);
+    sessionStorage.setItem('admin_role', ROLE);
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('app').style.display='block';
     init();
@@ -302,11 +307,25 @@ async function doLogin(){
 
 function logout(){
   sessionStorage.removeItem('admin_pw');
+  sessionStorage.removeItem('admin_role');
   ADMIN_PW_SESSION = null;
   location.reload();
 }
 
 let ADMIN_PW_SESSION = sessionStorage.getItem('admin_pw') || null;
+let ROLE = sessionStorage.getItem('admin_role') || 'admin';
+
+// ซ่อน/ปิดส่วนที่แก้ไขได้เมื่อเป็น tester (เป็นแค่ UI — ด่านจริงอยู่ที่ /api/admin)
+function applyRole(){
+  const ro = ROLE === 'tester';
+  document.body.classList.toggle('readonly', ro);
+  const b = document.getElementById('roleBadge');
+  if(b) b.textContent = ro ? 'TESTER · ดูอย่างเดียว' : 'ADMIN';
+  ['s_discord','s_rankings','s_apidocs'].forEach(id=>{
+    const e = document.getElementById(id);
+    if(e) e.disabled = ro;
+  });
+}
 if(ADMIN_PW_SESSION){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').style.display='block';
@@ -329,6 +348,7 @@ async function api(path, method='GET', body=null){
     logout();
     throw new Error('Unauthorized');
   }
+  if(r.status===403) throw new Error('บัญชีนี้ดูข้อมูลได้อย่างเดียว');
   if(r.status===204||r.status===200||r.status===201) {
     const t=await r.text();
     return t?JSON.parse(t):null;
@@ -464,6 +484,7 @@ function previewImg(){
 
 // INIT
 async function init(){
+  applyRole();
   buildTierGrid();
   [modes, players, allTiers] = await Promise.all([
     api('modes?order=sort_order'),
@@ -539,7 +560,7 @@ function renderPlayerList(){
         <div class="p-item-name">${p.name}${p.badge?` <span style="font-size:0.7rem;color:var(--accent);background:#e8b84b12;border:1px solid #e8b84b25;padding:1px 6px;border-radius:4px">${p.badge}</span>`:''}</div>
         <div class="p-item-meta">${p.region||'TH'}${p.uid?` · UID: ${p.uid}`:''} · ${tierStr}</div>
       </div>
-      <div class="p-item-actions">
+      <div class="p-item-actions edit-only">
         <button class="btn btn-ghost" style="padding:5px 12px;font-size:0.78rem" onclick="editPlayer('${p.id}')">แก้ไข</button>
         <button class="btn btn-red" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer('${p.id}')">ลบ</button>
       </div>
@@ -637,8 +658,8 @@ function renderModes(){
         <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px">${iconHtml}</span>
         <span style="flex:1;font-weight:600">${m.name}</span>
         <span style="font-size:0.72rem;padding:2px 8px;border-radius:4px;margin-right:8px;${m.include_in_overall?'background:#00d4aa18;color:#00d4aa;border:1px solid #00d4aa30':'background:#ffffff08;color:var(--text3);border:1px solid var(--border2)'}">${m.include_in_overall?'✓ Overall':'ไม่นับ Overall'}</span>
-        <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.78rem;margin-right:6px" onclick="toggleOverall(${m.id},${!m.include_in_overall})">${m.include_in_overall?'ปิด Overall':'เปิด Overall'}</button>
-        <button class="btn btn-red" style="padding:4px 10px;font-size:0.78rem" onclick="deleteMode(${m.id})">ลบ</button>
+        <button class="btn btn-ghost edit-only" style="padding:4px 10px;font-size:0.78rem;margin-right:6px" onclick="toggleOverall(${m.id},${!m.include_in_overall})">${m.include_in_overall?'ปิด Overall':'เปิด Overall'}</button>
+        <button class="btn btn-red edit-only" style="padding:4px 10px;font-size:0.78rem" onclick="deleteMode(${m.id})">ลบ</button>
       </div>`;
     }).join('')
     :'<div style="color:var(--text3);font-size:0.85rem">ยังไม่มี mode</div>';
