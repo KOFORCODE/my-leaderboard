@@ -1,6 +1,17 @@
 // /api/freefire.js
 // Vercel Serverless Function — proxy คำขอค้นหาผู้เล่น Free Fire
 // ใช้ FREEFIRE_API_KEY จาก Environment Variable เท่านั้น ไม่ปรากฏในโค้ด client
+// รับทั้งรหัส ADMIN_PW และ TESTER_PW (การค้นหาไม่ได้เขียนข้อมูลลงฐานข้อมูล)
+
+import { timingSafeEqual } from 'node:crypto';
+
+function safeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
+}
 
 // rate limit แบบง่าย: กัน UID เดิมถูกยิงถี่เกินไปภายใน function instance เดียวกัน
 // (อยู่ใน memory ชั่วคราว รีเซ็ตเมื่อ instance ถูกสร้างใหม่ - เป็นเกราะชั้นที่ 2 ต่อจาก cache ฝั่ง client)
@@ -9,6 +20,7 @@ const RATE_LIMIT_MS = 3000; // ห้ามยิง UID เดิมซ้ำ�
 
 export default async function handler(req, res) {
   const ADMIN_PW = process.env.ADMIN_PW;
+  const TESTER_PW = process.env.TESTER_PW; // ไม่บังคับ
   const FREEFIRE_API_KEY = process.env.FREEFIRE_API_KEY;
   const FREEFIRE_API_BASE = 'https://developers.freefirecommunity.com/api/v1';
 
@@ -18,9 +30,10 @@ export default async function handler(req, res) {
     });
   }
 
-  // ต้อง login เป็นแอดมินก่อนถึงจะเรียก API นี้ได้ (กันคนนอกยิงมาใช้โควตาคีย์ฟรี)
+  // ต้อง login เป็นแอดมินหรือ tester ก่อนถึงจะเรียก API นี้ได้ (กันคนนอกยิงมาใช้โควตาคีย์ฟรี)
   const pw = req.headers['x-admin-pw'];
-  if (!pw || pw !== ADMIN_PW) {
+  const ok = safeEqual(pw, ADMIN_PW) || (TESTER_PW && safeEqual(pw, TESTER_PW));
+  if (!ok) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
