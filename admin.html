@@ -198,6 +198,7 @@ body.readonly .edit-only{display:none!important}
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn btn-primary" onclick="savePlayer()">💾 บันทึก</button>
         <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">ยกเลิก</button>
+        <button class="btn btn-red" id="deleteBtn" onclick="deletePlayer(editId||tierOnlyId)" style="display:none;margin-left:auto">🗑️ ลบผู้เล่นนี้</button>
       </div>
     </div>
 
@@ -578,10 +579,14 @@ function addTierFor(id){
   if(!p)return;
   cancelEdit();
   tierOnlyId=id;
+  // เติมชื่อและ UID เดิมของผู้เล่นลงในช่อง (ไม่ได้บันทึกทับ เพราะ saveTierOnly ไม่ส่งข้อมูลผู้เล่น)
+  document.getElementById('f_name').value=p.name;
+  document.getElementById('f_uid').value=p.uid||'';
   const pt=allTiers.find(t=>t.player_id===id&&t.mode_id===activeModeId);
   buildTierGrid(pt?.tier_type||'');
   document.getElementById('formLabel').textContent='➕ เพิ่ม Tier ให้: '+p.name;
   document.getElementById('cancelBtn').style.display='';
+  document.getElementById('deleteBtn').style.display='';
   document.getElementById('f_tier').scrollIntoView({behavior:'smooth',block:'center'});
 }
 
@@ -660,6 +665,7 @@ function editPlayer(id){
   buildTierGrid(pt?.tier_type||'');
   document.getElementById('formLabel').textContent='✏️ แก้ไข: '+p.name;
   document.getElementById('cancelBtn').style.display='';
+  document.getElementById('deleteBtn').style.display='';
   document.getElementById('f_name').scrollIntoView({behavior:'smooth'});
 }
 
@@ -670,6 +676,7 @@ async function deletePlayer(id){
     toast('ลบแล้ว');
     players=players.filter(p=>p.id!==id);
     allTiers=allTiers.filter(t=>t.player_id!==id);
+    if(editId===id||tierOnlyId===id) cancelEdit(); // ล้างฟอร์มถ้ากำลังแก้ไข/เพิ่ม Tier ให้คนที่ถูกลบ
     renderPlayerList();
   } catch(e){toast('เกิดข้อผิดพลาด',false)}
 }
@@ -685,6 +692,7 @@ function cancelEdit(){
   buildTierGrid();
   document.getElementById('formLabel').textContent='➕ เพิ่มผู้เล่น';
   document.getElementById('cancelBtn').style.display='none';
+  document.getElementById('deleteBtn').style.display='none';
 }
 
 // MODES
