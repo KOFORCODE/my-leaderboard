@@ -5,9 +5,12 @@
 //
 // สิทธิ์:
 //   ADMIN_PW  -> แอดมิน ทำได้ทุกอย่าง
-//   TESTER_PW -> tester ดูข้อมูลได้อย่างเดียว (GET เท่านั้น) บังคับที่ฝั่งเซิร์ฟเวอร์
+//   TESTER_PW -> tester ดูได้ทั้งหมด และเพิ่มได้เฉพาะตาราง players / player_tiers
+//                (แก้ไข ลบ หรือเพิ่มตารางอื่นไม่ได้) บังคับที่ฝั่งเซิร์ฟเวอร์
 
 import { timingSafeEqual } from 'node:crypto';
+
+const TESTER_POST_TABLES = ['players', 'player_tiers'];
 
 function safeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -49,9 +52,14 @@ export default async function handler(req, res) {
 
   const method = req.method;
 
-  // tester: อ่านได้ (GET) และสามารถเพิ่มข้อมูลได้ (POST) แต่แก้ไขหรือลบไม่ได้ (PUT/PATCH/DELETE)
-  if (role === 'tester' && !['GET', 'POST'].includes(method)) {
-    return res.status(403).json({ error: 'บัญชี tester สามารถดูและเพิ่มข้อมูลได้เท่านั้น แก้ไขหรือลบไม่ได้' });
+  // tester: อ่านได้ทั้งหมด (GET) เพิ่มได้เฉพาะ players / player_tiers (POST)
+  // แก้ไข (PUT/PATCH) หรือลบ (DELETE) ไม่ได้ และเพิ่มในตารางอื่นก็ไม่ได้
+  if (role === 'tester' && method !== 'GET') {
+    const table = String(path).split('?')[0];
+    const canAdd = method === 'POST' && TESTER_POST_TABLES.includes(table);
+    if (!canAdd) {
+      return res.status(403).json({ error: 'บัญชี tester ดูข้อมูลได้ และเพิ่มผู้เล่น/Tier ได้เท่านั้น แก้ไขหรือลบไม่ได้' });
+    }
   }
 
   const url = `${SUPABASE_URL}/rest/v1/${path}`;
