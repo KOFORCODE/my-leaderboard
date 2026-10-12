@@ -543,6 +543,10 @@ function onModeChange(){
 }
 
 // PLAYERS
+// ส่ง id เข้า onclick โดยคงชนิดเดิมไว้ (ตัวเลขยังเป็นตัวเลข, ข้อความยังเป็นข้อความ)
+// เพราะถ้า id เป็นตัวเลขแต่ถูกใส่เป็น '...' ฟังก์ชันจะหา players.find(x=>x.id===id) ไม่เจอแล้วเงียบไป
+function idArg(v){ return JSON.stringify(v).replace(/"/g,'&quot;') }
+
 function renderPlayerList(){
   const el=document.getElementById('playerList');
   const q=(document.getElementById('adminSearch')?.value||'').toLowerCase().trim();
@@ -565,9 +569,9 @@ function renderPlayerList(){
         <div class="p-item-meta">${p.region||'TH'}${p.uid?` · UID: ${p.uid}`:''} · ${tierStr}</div>
       </div>
       <div class="p-item-actions">
-        <button class="btn btn-primary" style="padding:5px 12px;font-size:0.78rem" onclick="addTierFor('${p.id}')">➕ Tier</button>
-        <button class="btn btn-ghost edit-only" style="padding:5px 12px;font-size:0.78rem" onclick="editPlayer('${p.id}')">แก้ไข</button>
-        <button class="btn btn-red" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer('${p.id}')">ลบ</button>
+        <button class="btn btn-primary" style="padding:5px 12px;font-size:0.78rem" onclick="addTierFor(${idArg(p.id)})">➕ Tier</button>
+        <button class="btn btn-ghost edit-only" style="padding:5px 12px;font-size:0.78rem" onclick="editPlayer(${idArg(p.id)})">แก้ไข</button>
+        <button class="btn btn-red" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer(${idArg(p.id)})">ลบ</button>
       </div>
     </div>`;
   }).join('');
@@ -678,7 +682,7 @@ async function deletePlayer(id){
     allTiers=allTiers.filter(t=>t.player_id!==id);
     if(editId===id||tierOnlyId===id) cancelEdit(); // ล้างฟอร์มถ้ากำลังแก้ไข/เพิ่ม Tier ให้คนที่ถูกลบ
     renderPlayerList();
-  } catch(e){toast('เกิดข้อผิดพลาด',false)}
+  } catch(e){toast('ลบไม่สำเร็จ: '+e.message,false)}
 }
 
 function cancelEdit(){
