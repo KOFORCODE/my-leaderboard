@@ -195,7 +195,7 @@ body.readonly .edit-only{display:none!important}
           <input type="hidden" id="f_tier">
         </div>
       </div>
-      <div class="edit-only" style="display:flex;gap:8px;margin-top:14px">
+      <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn btn-primary" onclick="savePlayer()">💾 บันทึก</button>
         <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">ยกเลิก</button>
       </div>
@@ -269,6 +269,7 @@ body.readonly .edit-only{display:none!important}
 const TIERS = ['S','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
 
 let editId = null;
+let tierOnlyId = null; // เพิ่ม tier ให้ผู้เล่นโดยไม่แก้ข้อมูลผู้เล่น (ใช้ได้กับ tester)
 let modes = [], players = [], allTiers = [];
 let activeModeId = null;
 
@@ -291,7 +292,7 @@ async function doLogin(){
       return;
     }
     ADMIN_PW_SESSION = pw;
-    ROLE = r.headers.get('x-role') || 'admin';
+    ROLE = r.headers.get('x-role') || 'tester'; // ไม่รู้ role ให้ถือว่าสิทธิ์น้อยที่สุดไว้ก่อน
     sessionStorage.setItem('admin_pw', pw);
     sessionStorage.setItem('admin_role', ROLE);
     document.getElementById('loginScreen').style.display='none';
@@ -313,7 +314,7 @@ function logout(){
 }
 
 let ADMIN_PW_SESSION = sessionStorage.getItem('admin_pw') || null;
-let ROLE = sessionStorage.getItem('admin_role') || 'admin';
+let ROLE = sessionStorage.getItem('admin_role') || 'tester';
 
 // ซ่อน/ปิดส่วนที่แก้ไขได้เมื่อเป็น tester (เป็นแค่ UI — ด่านจริงอยู่ที่ /api/admin)
 function applyRole(){
@@ -562,15 +563,52 @@ function renderPlayerList(){
         <div class="p-item-name">${p.name}${p.badge?` <span style="font-size:0.7rem;color:var(--accent);background:#e8b84b12;border:1px solid #e8b84b25;padding:1px 6px;border-radius:4px">${p.badge}</span>`:''}</div>
         <div class="p-item-meta">${p.region||'TH'}${p.uid?` · UID: ${p.uid}`:''} · ${tierStr}</div>
       </div>
-      <div class="p-item-actions edit-only">
-        <button class="btn btn-ghost" style="padding:5px 12px;font-size:0.78rem" onclick="editPlayer('${p.id}')">แก้ไข</button>
-        <button class="btn btn-red" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer('${p.id}')">ลบ</button>
+      <div class="p-item-actions">
+        <button class="btn btn-primary" style="padding:5px 12px;font-size:0.78rem" onclick="addTierFor('${p.id}')">➕ Tier</button>
+        <div class="edit-only" style="display:flex;gap:6px">
+          <button class="btn btn-ghost" style="padding:5px 12px;font-size:0.78rem" onclick="editPlayer('${p.id}')">แก้ไข</button>
+          <button class="btn btn-red" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer('${p.id}')">ลบ</button>
+        </div>
       </div>
     </div>`;
   }).join('');
 }
 
+// เพิ่ม tier ให้ผู้เล่นที่มีอยู่แล้ว (ไม่แตะข้อมูลผู้เล่น จึงไม่ต้องใช้สิทธิ์ PATCH players)
+function addTierFor(id){
+  const p=players.find(x=>x.id===id);
+  if(!p)return;
+  cancelEdit();
+  tierOnlyId=id;
+  const pt=allTiers.find(t=>t.player_id===id&&t.mode_id===activeModeId);
+  buildTierGrid(pt?.tier_type||'');
+  document.getElementById('formLabel').textContent='➕ เพิ่ม Tier ให้: '+p.name;
+  document.getElementById('cancelBtn').style.display='';
+  document.getElementById('f_tier').scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+async function saveTierOnly(){
+  const pid=tierOnlyId;
+  const tier=document.getElementById('f_tier').value;
+  if(!tier){toast('กรุณาเลือก Tier',false);return}
+  if(!activeModeId){toast('ยังไม่มี Game Mode',false);return}
+  const existing=allTiers.find(t=>t.player_id===pid&&t.mode_id===activeModeId);
+  if(existing&&ROLE==='tester'){toast('ผู้เล่นนี้มี Tier ใน mode นี้แล้ว tester แก้ไขไม่ได้',false);return}
+  try{
+    if(existing){
+      await api(`player_tiers?id=eq.${existing.id}`, 'PATCH', {tier_type:tier});
+    } else {
+      await api('player_tiers', 'POST', {player_id:pid, mode_id:activeModeId, tier_type:tier});
+    }
+    toast('✅ บันทึก Tier สำเร็จ');
+    cancelEdit();
+    [players, allTiers]=await Promise.all([api('players?order=name'),api('player_tiers?select=*')]);
+    renderPlayerList();
+  } catch(e){toast('เกิดข้อผิดพลาด: '+e.message,false)}
+}
+
 async function savePlayer(){
+  if(tierOnlyId) return saveTierOnly();
   const name=document.getElementById('f_name').value.trim();
   if(!name){toast('กรุณาใส่ชื่อผู้เล่น',false);return}
   const tier=document.getElementById('f_tier').value;
@@ -611,6 +649,7 @@ async function savePlayer(){
 function editPlayer(id){
   const p=players.find(x=>x.id===id);
   if(!p)return;
+  tierOnlyId=null;
   editId=id;
   document.getElementById('f_name').value=p.name;
   document.getElementById('f_uid').value=p.uid||'';
@@ -639,6 +678,7 @@ async function deletePlayer(id){
 
 function cancelEdit(){
   editId=null;
+  tierOnlyId=null;
   document.getElementById('f_name').value='';
   document.getElementById('f_uid').value='';
   document.getElementById('f_badge').value='';
