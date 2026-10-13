@@ -198,7 +198,7 @@ body.readonly .edit-only{display:none!important}
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn btn-primary" onclick="savePlayer()">💾 บันทึก</button>
         <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">ยกเลิก</button>
-        <button class="btn btn-red" id="deleteBtn" onclick="deletePlayer(editId||tierOnlyId)" style="display:none;margin-left:auto">🗑️ ลบผู้เล่นนี้</button>
+        <button class="btn btn-red edit-only" id="deleteBtn" onclick="deletePlayer(editId||tierOnlyId)" style="display:none;margin-left:auto">🗑️ ลบผู้เล่นนี้</button>
       </div>
     </div>
 
@@ -322,7 +322,7 @@ function applyRole(){
   const ro = ROLE === 'tester';
   document.body.classList.toggle('readonly', ro);
   const b = document.getElementById('roleBadge');
-  if(b) b.textContent = ro ? 'TESTER · เพิ่มเท่านั้น' : 'ADMIN';
+  if(b) b.textContent = ro ? 'TESTER · เพิ่ม/แก้ไข Tier' : 'ADMIN';
   const fl = document.getElementById('formLabel');
   if(ro && fl) fl.textContent = '➕ เพิ่มผู้เล่นและ Tier';
   ['s_discord','s_rankings','s_apidocs'].forEach(id=>{
@@ -571,7 +571,7 @@ function renderPlayerList(){
       <div class="p-item-actions">
         <button class="btn btn-primary" style="padding:5px 12px;font-size:0.78rem" onclick="addTierFor(${idArg(p.id)})">➕ Tier</button>
         <button class="btn btn-ghost edit-only" style="padding:5px 12px;font-size:0.78rem" onclick="editPlayer(${idArg(p.id)})">แก้ไข</button>
-        <button class="btn btn-red" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer(${idArg(p.id)})">ลบ</button>
+        <button class="btn btn-red edit-only" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer(${idArg(p.id)})">ลบ</button>
       </div>
     </div>`;
   }).join('');
@@ -600,7 +600,6 @@ async function saveTierOnly(){
   if(!tier){toast('กรุณาเลือก Tier',false);return}
   if(!activeModeId){toast('ยังไม่มี Game Mode',false);return}
   const existing=allTiers.find(t=>t.player_id===pid&&t.mode_id===activeModeId);
-  if(existing&&ROLE==='tester'){toast('ผู้เล่นนี้มี Tier ใน mode นี้แล้ว tester แก้ไขไม่ได้',false);return}
   try{
     if(existing){
       await api(`player_tiers?id=eq.${existing.id}`, 'PATCH', {tier_type:tier});
