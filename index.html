@@ -297,13 +297,11 @@ const SUPABASE_ANON = 'sb_publishable_XGA4PQ3GY1LpEmSSRTyONg_2ogqR06G';
 
 const TIER_ORDER = ['S','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
 const TIER_CLASS = {'S':'t-S','A+':'t-Ap','A':'t-A','A-':'t-Am','B+':'t-Bp','B':'t-B','B-':'t-Bm','C+':'t-Cp','C':'t-C','C-':'t-Cm','D+':'t-Dp','D':'t-D','D-':'t-Dm','F':'t-F'};
-const TIER_SCORE = {'S':15,'A+':12,'A':11,'A-':10,'B+':9,'B':8,'B-':7,'C+':6,'C':5,'C-':4,'D+':3,'D':2,'D-':1,'F':0};
+const TIER_SCORE = {'S':100,'A+':85,'A':75,'A-':65,'B+':54,'B':46,'B-':38,'C+':30,'C':25,'C-':20,'D+':16,'D':13,'D-':10,'F':0};
 
 let modes=[], players=[], tiers=[], activeMode='overall';
-const RANK1_IMG='https://i.postimg.cc/yxVsWftL/rank1.png';
-const RANK2_IMG='https://i.postimg.cc/t4fqDNnH/rank2.png';
-const RANK3_IMG='https://i.postimg.cc/W3msNRWg/rank3.png';
-const RANK4_20_IMG='https://i.postimg.cc/HnBHMw16/rank4-20.png';
+const UNRANKED_IMG='https://i.postimg.cc/Cx4fsbpG/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(1).png';
+const LOW_POINTS_IMG='https://i.postimg.cc/vZXtHJBp/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(1).png';
 
 function esc(v){
   return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -422,11 +420,10 @@ function badgeClass(badge){
   return'badge-ace';
 }
 
-function getRankImg(rank){
-  if(rank===1) return RANK1_IMG;
-  if(rank===2) return RANK2_IMG;
-  if(rank===3) return RANK3_IMG;
-  if(rank>=4 && rank<=20) return RANK4_20_IMG;
+// รูปแทน avatar: Unranked ก่อนเสมอ, แท็บ Overall ที่คะแนนรวมต่ำกว่า 20 ใช้รูปคะแนนต่ำ
+function getAvatarImg(isUnranked, isOverall, pts){
+  if(isUnranked) return UNRANKED_IMG;
+  if(isOverall && pts<20) return LOW_POINTS_IMG;
   return '';
 }
 function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
@@ -437,9 +434,9 @@ function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
   const reg=esc(p.region||'TH');
   const regClass=String(p.region||'TH').replace(/[^a-zA-Z0-9_-]/g,'');
   const badge=esc(p.badge);
-  const rankImg=isUnranked?'':getRankImg(rank);
+  const rankImg=getAvatarImg(isUnranked, isOverall, scoreOrTier);
   const av=rankImg
-    ?`<div class="avatar avatar-lockedimg"><img src="${rankImg}" alt="Rank ${rank}" loading="lazy"></div>`
+    ?`<div class="avatar avatar-lockedimg"><img src="${rankImg}" alt="${isUnranked?'Unranked':playerName}" loading="lazy"></div>`
     :(p.avatar
       ?`<div class="avatar"><img src="${esc(p.avatar)}" alt="${playerName}" loading="lazy"></div>`
       :`<div class="avatar">${esc((p.name?.[0]||'?').toUpperCase())}</div>`);
@@ -490,16 +487,19 @@ function render(){
     const overallModes=modes.filter(m=>m.include_in_overall);
     const overallModeIds=new Set(overallModes.map(m=>m.id));
     const scoreMap={};
+    const firstTierId={}; // id แถว tier แรกของผู้เล่นใน Overall ใช้ตัดสินเมื่อคะแนนเท่ากัน
     tiers.filter(t=>overallModeIds.has(t.mode_id)).forEach(t=>{
       if(!scoreMap[t.player_id]) scoreMap[t.player_id]=0;
       scoreMap[t.player_id]+=(TIER_SCORE[t.tier_type]||0);
+      if(firstTierId[t.player_id]===undefined||t.id<firstTierId[t.player_id]) firstTierId[t.player_id]=t.id;
     });
 
-    let list=players.filter(p=>scoreMap[p.id]!==undefined);
-    list=list.map((p,i)=>({...p,_idx:i}));
+    const list=players.filter(p=>scoreMap[p.id]!==undefined);
     list.sort((a,b)=>{
       const diff=scoreMap[b.id]-scoreMap[a.id];
-      return diff!==0?diff:a._idx-b._idx;
+      if(diff!==0) return diff;
+      // คะแนนเท่ากัน: ใครได้ tier แถวแรกก่อน (id น้อยกว่า) อยู่บนกว่า คนที่เพิ่มทีหลังจึงเป็นรอง
+      return (firstTierId[a.id]??0)-(firstTierId[b.id]??0);
     });
 
     document.getElementById('heroStats').innerHTML=`
@@ -606,14 +606,19 @@ function computeRankAndPts(p){
     const overallModes=modes.filter(m=>m.include_in_overall);
     const overallModeIds=new Set(overallModes.map(m=>m.id));
     const scoreMap={};
+    const firstTierId={};
     tiers.filter(t=>overallModeIds.has(t.mode_id)).forEach(t=>{
       if(!scoreMap[t.player_id]) scoreMap[t.player_id]=0;
       scoreMap[t.player_id]+=(TIER_SCORE[t.tier_type]||0);
+      if(firstTierId[t.player_id]===undefined||t.id<firstTierId[t.player_id]) firstTierId[t.player_id]=t.id;
     });
     if(scoreMap[p.id]===undefined) return [null,0];
     const ranked=players.filter(x=>scoreMap[x.id]!==undefined)
-      .map((x,i)=>({...x,_idx:i}))
-      .sort((a,b)=>{const diff=scoreMap[b.id]-scoreMap[a.id];return diff!==0?diff:a._idx-b._idx;});
+      .sort((a,b)=>{
+        const diff=scoreMap[b.id]-scoreMap[a.id];
+        if(diff!==0) return diff;
+        return (firstTierId[a.id]??0)-(firstTierId[b.id]??0);
+      });
     return [ranked.findIndex(x=>x.id===p.id)+1, scoreMap[p.id]];
   }
   const modeTiers=tiers.filter(t=>t.mode_id===activeMode);
@@ -688,11 +693,11 @@ function openModal(pid, rank, pts, tempPlayer){
 
   const regionLabels={'TH':'Thailand','AS':'Asia','EU':'Europe','NA':'North America'};
   const isUnranked = rank===null || rank===undefined;
-  const modalRankImg=isUnranked?'':getRankImg(rank);
+  const modalRankImg=getAvatarImg(isUnranked, activeMode==='overall', totalPts);
 
   document.getElementById('modalInner').innerHTML=`
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-avatar${modalRankImg?' locked':''}">${modalRankImg?`<img src="${modalRankImg}" alt="Rank ${rank}">`:(p.avatar?`<img src="${esc(p.avatar)}" alt="${playerName}">`:esc((p.name?.[0]||'?').toUpperCase()))}</div>
+    <div class="modal-avatar${modalRankImg?' locked':''}">${modalRankImg?`<img src="${modalRankImg}" alt="${isUnranked?'Unranked':playerName}">`:(p.avatar?`<img src="${esc(p.avatar)}" alt="${playerName}">`:esc((p.name?.[0]||'?').toUpperCase()))}</div>
     <div class="modal-name">${playerName}</div>
     ${p.uid?`<div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em;text-align:center">UID: <span style="color:var(--text2);font-weight:600">${esc(p.uid)}</span><button onclick="navigator.clipboard.writeText('${p.uid}');this.textContent='✓';setTimeout(()=>this.textContent='📋',1500)" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.65rem;padding:0;margin-left:2px;transition:all .2s">📋</button></div>`:''}
     ${p.badge?`<div><span class="modal-badge ${bclass}">◈ ${badge}</span></div>`:''}
