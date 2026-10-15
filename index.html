@@ -127,7 +127,8 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 .avatar-rank-badge{position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;border:2px solid var(--bg1)}
 .avatar-lockedimg{background:transparent!important;border:none!important;box-shadow:none!important;border-radius:0!important;overflow:visible!important}
 .avatar-lockedimg img{width:100%;height:100%;object-fit:contain!important;border-radius:0!important}
-.avatar-lowpts img{transform:scale(1.3)}
+.avatar-lowpts img{transform:scale(1.5)}
+.avatar-ptsup img{transform:scale(1.3)}
 .player-info{display:flex;flex-direction:column;gap:4px;min-width:0;overflow:hidden}
 .player-name{font-family:var(--font-body);font-size:.97rem;font-weight:700;color:var(--text1);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;word-break:break-word;line-height:1.25}
 .player-sub{display:flex;align-items:center;gap:6px}
@@ -235,7 +236,8 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 .modal-avatar img{width:100%;height:100%;object-fit:cover}
 .modal-avatar.locked{background:transparent;border:none;border-radius:0;overflow:visible;box-shadow:none}
 .modal-avatar.locked img{object-fit:contain;border-radius:0}
-.modal-avatar.lowpts img{transform:scale(1.3)}
+.modal-avatar.lowpts img{transform:scale(1.5)}
+.modal-avatar.ptsup img{transform:scale(1.3)}
 .modal-name{font-family:var(--font-display);font-size:1.4rem;font-weight:600;letter-spacing:.01em;background:linear-gradient(135deg,#ffe9ad,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
 .modal-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 15px;border-radius:20px;font-family:var(--font-mono);font-size:.78rem;font-weight:700;margin-bottom:9px}
 .modal-region{color:var(--text3);font-size:.8rem;margin-bottom:18px;font-weight:500}
@@ -245,6 +247,73 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 .modal-pos-num{font-family:var(--font-display);font-size:1.5rem;font-weight:600;color:var(--accent);min-width:32px}
 .modal-pos-detail{display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:600}
 .modal-tiers-box{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:8px}
+
+/* BANNER */
+.banner{display:none;max-width:1280px;margin:0 auto;padding:1.6rem 1.5rem .4rem;text-align:center}
+.banner-title{font-family:var(--font-display);font-size:2rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.15}
+.banner-title span{background:linear-gradient(120deg,#ffd875,var(--accent) 45%,#ffe9ad 60%,var(--accent2));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:titleShift 6s linear infinite}
+@keyframes titleShift{to{background-position:200% center}}
+.banner-sub{color:var(--text2);font-size:.86rem;margin-top:6px}
+.banner-stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:1rem}
+.bstat{display:flex;align-items:center;gap:8px;background:linear-gradient(160deg,var(--bg1),var(--bg2));border:1px solid var(--border2);border-radius:999px;padding:7px 16px;font-size:.78rem;color:var(--text2);font-weight:600}
+.bstat b{font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--accent);letter-spacing:.02em}
+
+/* PODIUM */
+.podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:12px;align-items:end;max-width:760px;margin:0 auto 1.4rem}
+.pod{position:relative;background:linear-gradient(180deg,var(--bg2),var(--bg1));border:1px solid var(--border2);border-radius:16px;padding:1.5rem .6rem 1rem;text-align:center;cursor:pointer;min-width:0;transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;animation:podIn .6s cubic-bezier(.22,1,.36,1) backwards}
+.pod:hover{transform:translateY(-6px)}
+.pod.p1{padding-top:2rem;padding-bottom:1.3rem;border-color:#f5c84266;box-shadow:0 0 44px #f5c84224;animation-delay:.1s}
+.pod.p2{border-color:#c8d0de44;box-shadow:0 0 30px #c8d0de12;animation-delay:.2s}
+.pod.p3{border-color:#e0906044;box-shadow:0 0 30px #e0906012;animation-delay:.3s}
+@keyframes podIn{from{opacity:0;transform:translateY(24px) scale(.95)}}
+.pod-rank{position:absolute;top:10px;left:10px;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:.9rem;font-weight:600}
+.pod.p1 .pod-rank{background:linear-gradient(135deg,#ffe08a,#c8960c);color:#241a02}
+.pod.p2 .pod-rank{background:linear-gradient(135deg,#eef2f9,#8d9bb5);color:#1a1e28}
+.pod.p3 .pod-rank{background:linear-gradient(135deg,#f0a878,#a0522d);color:#241203}
+.pod-crown{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:1.6rem;filter:drop-shadow(0 0 10px #f5c84299);animation:crownFloat 2.6s ease-in-out infinite}
+@keyframes crownFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
+.pod-av{width:76px;height:76px;margin:0 auto 10px;border-radius:14px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.9rem;font-weight:600;color:var(--text3)}
+.pod.p1 .pod-av{width:96px;height:96px}
+.pod-av img{width:100%;height:100%;object-fit:cover}
+.pod-av.locked{background:transparent;border-radius:0;overflow:visible}
+.pod-av.locked img{object-fit:contain}
+.pod-name{font-size:.92rem;font-weight:700;line-height:1.25;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;word-break:break-word}
+.pod.p1 .pod-name{color:#ffdd85}
+.pod.p2 .pod-name{color:#e2e7f2}
+.pod.p3 .pod-name{color:#f0ae82}
+.pod-pts{font-family:var(--font-mono);font-size:.72rem;color:var(--text3);font-weight:600;margin-top:5px}
+.pod-badge{display:inline-block;margin-top:6px;font-family:var(--font-mono);font-size:.62rem;padding:2px 8px;border-radius:20px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ROW ENTRANCE + #1 SHINE */
+.t-row{animation:rowIn .45s ease backwards;animation-delay:calc(var(--i,0)*35ms)}
+@keyframes rowIn{from{opacity:0;transform:translateY(14px)}}
+.t-row.r1{position:relative;overflow:hidden}
+.t-row.r1::before{content:'';position:absolute;top:0;bottom:0;left:-40%;width:28%;background:linear-gradient(100deg,transparent,#ffe08a26,transparent);transform:skewX(-20deg);animation:shine 5s ease-in-out infinite;pointer-events:none}
+@keyframes shine{0%,55%{left:-40%}100%{left:130%}}
+
+/* BACK TO TOP */
+.to-top{position:fixed;right:20px;bottom:24px;width:42px;height:42px;border-radius:50%;border:1px solid #f2b93e55;background:#12141cdd;backdrop-filter:blur(8px);color:var(--accent);font-size:1.1rem;font-weight:700;cursor:pointer;z-index:60;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .2s,transform .2s}
+.to-top.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+.to-top:hover{background:var(--accent-soft)}
+
+@media(max-width:768px){
+  .banner{padding:1.2rem 1rem .2rem}
+  .banner-title{font-size:1.5rem}
+  .banner-sub{font-size:.76rem}
+  .bstat{padding:6px 12px;font-size:.7rem}
+  .podium{gap:8px}
+  .pod{padding:1.4rem .4rem .8rem;border-radius:14px}
+  .pod.p1{padding-top:1.8rem}
+  .pod-av{width:56px;height:56px;font-size:1.4rem}
+  .pod.p1 .pod-av{width:70px;height:70px}
+  .pod-name{font-size:.78rem}
+  .pod-pts{font-size:.64rem}
+  .pod-badge{display:none}
+  .pod-rank{width:22px;height:22px;top:8px;left:8px;font-size:.78rem}
+}
+@media(prefers-reduced-motion:reduce){
+  .t-row,.pod,.pod-crown,.banner-title span,.t-row.r1::before{animation:none!important}
+}
 </style>
 </head>
 <body>
@@ -274,9 +343,20 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   </div>
 </div>
 
+<section class="banner" id="banner">
+  <div class="banner-title">🏆 <span>Free Fire Tier List</span></div>
+  <div class="banner-sub">กดที่ผู้เล่นเพื่อดูรายละเอียด · พิมพ์ชื่อหรือ UID แล้วกด Enter เพื่อค้นหา</div>
+  <div class="banner-stats">
+    <div class="bstat">👥 ผู้เล่น <b id="bsPlayers">0</b></div>
+    <div class="bstat">🎮 Game Mode <b id="bsModes">0</b></div>
+    <div class="bstat">🏅 Tier ที่ให้แล้ว <b id="bsTiers">0</b></div>
+  </div>
+</section>
+
 <div class="hero" id="heroStats"></div>
 
 <main>
+  <div id="podium"></div>
   <div class="table-wrap">
     <div class="t-head">
       <div>#</div>
@@ -286,6 +366,8 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
     <div id="tableBody"><div class="loading"><span class="loading-dots">กำลังโหลด</span></div></div>
   </div>
 </main>
+
+<button type="button" class="to-top" id="toTop" aria-label="กลับขึ้นบน" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
   <div class="modal-card" id="modalCard">
@@ -447,7 +529,7 @@ function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
   const badge=esc(p.badge);
   const rankImg=getAvatarImg(isUnranked, isOverall, scoreOrTier);
   const av=rankImg
-    ?`<div class="avatar avatar-lockedimg${POINTS_IMGS.includes(rankImg)?' avatar-lowpts':''}"><img src="${rankImg}" alt="${isUnranked?'Unranked':playerName}" loading="lazy"></div>`
+    ?`<div class="avatar avatar-lockedimg${rankImg===LOW_POINTS_IMG?' avatar-lowpts':(POINTS_IMGS.includes(rankImg)?' avatar-ptsup':'')}"><img src="${rankImg}" alt="${isUnranked?'Unranked':playerName}" loading="lazy"></div>`
     :(p.avatar
       ?`<div class="avatar"><img src="${esc(p.avatar)}" alt="${playerName}" loading="lazy"></div>`
       :`<div class="avatar">${esc((p.name?.[0]||'?').toUpperCase())}</div>`);
@@ -486,7 +568,63 @@ function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
   </div>`;
 }
 
+// นับเลขขึ้นตอนโหลดครั้งแรก (ครั้งถัดไปแสดงค่าตรงๆ)
+let bannerAnimated=false;
+function countUp(el,to){
+  if(!el) return;
+  if(bannerAnimated||window.matchMedia('(prefers-reduced-motion: reduce)').matches){ el.textContent=to; return; }
+  const t0=performance.now(), dur=900;
+  (function step(now){
+    const k=Math.min(1,(now-t0)/dur);
+    el.textContent=Math.round(to*(1-Math.pow(1-k,3)));
+    if(k<1) requestAnimationFrame(step);
+  })(t0);
+}
+
+function updateBanner(){
+  const b=document.getElementById('banner');
+  if(!b) return;
+  b.style.display='block';
+  countUp(document.getElementById('bsPlayers'),players.length);
+  countUp(document.getElementById('bsModes'),modes.length);
+  countUp(document.getElementById('bsTiers'),tiers.length);
+  bannerAnimated=true;
+}
+
+// แท่นโชว์ Top 3 (เฉพาะแท็บ Overall และมีผู้เล่นอย่างน้อย 3 คน)
+function renderPodium(list, scoreMap){
+  const el=document.getElementById('podium');
+  if(!el) return;
+  if(!list || list.length<3){ el.innerHTML=''; return; }
+  el.innerHTML='<div class="podium">'+[1,0,2].map(i=>{
+    const p=list[i], rank=i+1, pts=scoreMap[p.id];
+    const name=esc(p.name);
+    const img=getAvatarImg(false,true,pts);
+    const scaleCls=img===LOW_POINTS_IMG?' avatar-lowpts':(POINTS_IMGS.includes(img)?' avatar-ptsup':'');
+    const av=img
+      ?`<div class="pod-av locked${scaleCls}"><img src="${img}" alt="${name}"></div>`
+      :(p.avatar
+        ?`<div class="pod-av"><img src="${esc(p.avatar)}" alt="${name}"></div>`
+        :`<div class="pod-av">${esc((p.name?.[0]||'?').toUpperCase())}</div>`);
+    const badgeHtml=p.badge?`<div><span class="pod-badge ${badgeClass(p.badge)}">◈ ${esc(p.badge)}</span></div>`:'';
+    return`<div class="pod p${rank}" onclick="openModal(${jsArg(p.id)},${rank},${pts})">
+      ${rank===1?'<div class="pod-crown">👑</div>':''}
+      <div class="pod-rank">${rank}</div>
+      ${av}
+      <div class="pod-name">${name}</div>
+      <div class="pod-pts">${pts} pts</div>
+      ${badgeHtml}
+    </div>`;
+  }).join('')+'</div>';
+}
+
+window.addEventListener('scroll',()=>{
+  const b=document.getElementById('toTop');
+  if(b) b.classList.toggle('show',window.scrollY>500);
+},{passive:true});
+
 function render(){
+  updateBanner();
   // build per-player tier map: {player_id: {mode_id: tier_type}}
   const tiersByPlayer={};
   tiers.forEach(t=>{
@@ -520,6 +658,7 @@ function render(){
     `;
 
     document.getElementById('tierHeader').textContent='TIERS';
+    renderPodium(list,scoreMap);
     if(!list.length){
       document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีข้อมูล Overall</p></div>`;
       return;
@@ -557,6 +696,7 @@ function render(){
   // For single mode: show only the selected mode. Overall still shows all counted modes.
   const selectedModes=modes.filter(m=>m.id===activeMode);
   document.getElementById('tierHeader').textContent='TIER';
+  renderPodium([],{});
 
   if(!list.length){
     document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีผู้เล่นใน mode นี้</p></div>`;
@@ -708,7 +848,7 @@ function openModal(pid, rank, pts, tempPlayer){
 
   document.getElementById('modalInner').innerHTML=`
     <button class="modal-close" onclick="closeModal()">✕</button>
-    <div class="modal-avatar${modalRankImg?' locked':''}${POINTS_IMGS.includes(modalRankImg)?' lowpts':''}">${modalRankImg?`<img src="${modalRankImg}" alt="${isUnranked?'Unranked':playerName}">`:(p.avatar?`<img src="${esc(p.avatar)}" alt="${playerName}">`:esc((p.name?.[0]||'?').toUpperCase()))}</div>
+    <div class="modal-avatar${modalRankImg?' locked':''}${modalRankImg===LOW_POINTS_IMG?' lowpts':(POINTS_IMGS.includes(modalRankImg)?' ptsup':'')}">${modalRankImg?`<img src="${modalRankImg}" alt="${isUnranked?'Unranked':playerName}">`:(p.avatar?`<img src="${esc(p.avatar)}" alt="${playerName}">`:esc((p.name?.[0]||'?').toUpperCase()))}</div>
     <div class="modal-name">${playerName}</div>
     ${p.uid?`<div style="font-size:0.72rem;color:var(--text3);margin-bottom:4px;letter-spacing:0.05em;text-align:center">UID: <span style="color:var(--text2);font-weight:600">${esc(p.uid)}</span><button onclick="navigator.clipboard.writeText('${p.uid}');this.textContent='✓';setTimeout(()=>this.textContent='📋',1500)" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:0.65rem;padding:0;margin-left:2px;transition:all .2s">📋</button></div>`:''}
     ${p.badge?`<div><span class="modal-badge ${bclass}">◈ ${badge}</span></div>`:''}
@@ -774,7 +914,12 @@ function attachRipples(){
 
 // attach after every render
 const _origRender=render;
-render=function(...a){_origRender(...a);requestAnimationFrame(attachRipples)};
+render=function(...a){
+  _origRender(...a);
+  // ให้แถวไหลเข้าทีละแถว (หน่วงสูงสุด 14 แถวแรก)
+  document.querySelectorAll('#tableBody .t-row').forEach((r,i)=>r.style.setProperty('--i',Math.min(i,14)));
+  requestAnimationFrame(attachRipples);
+};
 </script>
 </body>
 </html>
