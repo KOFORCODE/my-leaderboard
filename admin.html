@@ -142,6 +142,16 @@ body.readonly .edit-only{display:none!important}
   <!-- PLAYERS SECTION -->
   <div class="section active" id="sec-players">
 
+    <!-- ตรวจคูลดาวด้วย UID (admin และ tester ใช้ได้) -->
+    <div class="card">
+      <div class="card-title">⭐ ตรวจสอบคูลดาวด้วย UID</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" inputmode="numeric" id="cs_uid" placeholder="ใส่ UID ผู้เล่น" style="flex:1" onkeydown="if(event.key==='Enter')checkCoolStar()">
+        <button class="btn btn-primary" type="button" onclick="checkCoolStar()" style="white-space:nowrap">ตรวจสอบ</button>
+      </div>
+      <div id="csResult" style="margin-top:12px;font-size:0.9rem"></div>
+    </div>
+
     <!-- ADD/EDIT FORM -->
     <div class="card">
       <div class="card-title" id="formLabel">➕ เพิ่มผู้เล่น</div>
@@ -189,8 +199,7 @@ body.readonly .edit-only{display:none!important}
         <div class="form-full edit-only">
           <label>Preview รูป</label>
           <div class="img-preview" id="imgPreview">🖼️</div>
-        </div>
-        <div class="form-full">
+        </div>        <div class="form-full">
           <label>Game Mode ที่ต้องการให้ Tier</label>
           <select id="f_mode" onchange="onModeChange()"></select>
         </div>
@@ -201,9 +210,11 @@ body.readonly .edit-only{display:none!important}
         </div>
       </div>
       <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-green" id="addCoolBtn" onclick="addCoolStar()">⭐ เพิ่มคูลดาว 7 วัน</button>
         <button class="btn btn-primary" onclick="savePlayer()">💾 บันทึก</button>
         <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">ยกเลิก</button>
         <button class="btn btn-red edit-only" id="removeTierBtn" onclick="removeTier()" style="display:none">❌ ยกเลิก Tier ใน mode นี้</button>
+        <button class="btn btn-red edit-only" id="clearCoolBtn" onclick="clearCoolStar()" style="display:none">ล้างคูลดาว</button>
         <button class="btn btn-red" id="deleteBtn" onclick="deletePlayer(editId||tierOnlyId)" style="display:none;margin-left:auto">🗑️ ลบผู้เล่นนี้</button>
       </div>
     </div>
@@ -589,7 +600,7 @@ function renderPlayerList(){
     return`<div class="p-item">
       <div class="p-item-avatar">${avUrl?`<img src="${esc(avUrl)}" onerror="this.style.display='none'">`:esc((String(p.name||'?')[0]||'?').toUpperCase())}</div>
       <div class="p-item-info">
-        <div class="p-item-name">${esc(p.name)}${p.badge?` <span style="font-size:0.7rem;color:var(--accent);background:#e8b84b12;border:1px solid #e8b84b25;padding:1px 6px;border-radius:4px">${esc(p.badge)}</span>`:''}</div>
+        <div class="p-item-name">${esc(p.name)}${coolDaysLeft(p.cool_star_until)>0?` <span style="font-size:0.7rem;color:var(--accent);background:#e8b84b12;border:1px solid #e8b84b25;padding:1px 6px;border-radius:4px">⭐ คูลดาวเหลือ ${coolDaysLeft(p.cool_star_until)} วัน</span>`:''}${p.badge?` <span style="font-size:0.7rem;color:var(--accent);background:#e8b84b12;border:1px solid #e8b84b25;padding:1px 6px;border-radius:4px">${esc(p.badge)}</span>`:''}</div>
         <div class="p-item-meta">${esc(p.region||'TH')}${p.uid?` · UID: ${esc(p.uid)}`:''} · ${tierStr}</div>
       </div>
       <div class="p-item-actions">
@@ -689,6 +700,7 @@ function editPlayer(id){
   document.getElementById('f_region').value=p.region||'TH';
   document.getElementById('f_badge').value=p.badge||'';
   document.getElementById('f_avatar').value=p.avatar||'';
+  updateClearCoolBtn();
   previewImg();
   buildModeSelect(activeModeId);
   const pt=allTiers.find(t=>t.player_id===id&&t.mode_id===activeModeId);
@@ -756,11 +768,79 @@ function cancelEdit(){
   document.getElementById('f_badge').value='';
   document.getElementById('f_avatar').value='';
   document.getElementById('imgPreview').innerHTML='🖼️';
+  updateClearCoolBtn();
   buildTierGrid();
   document.getElementById('formLabel').textContent='➕ เพิ่มผู้เล่น';
   document.getElementById('cancelBtn').style.display='none';
   document.getElementById('deleteBtn').style.display='none';
   updateRemoveTierBtn();
+}
+
+// ตรวจคูลดาวจาก UID (อ่านอย่างเดียว ใช้ได้ทั้ง admin และ tester)
+async function checkCoolStar(){
+  const uid=document.getElementById('cs_uid').value.trim();
+  const el=document.getElementById('csResult');
+  if(!/^\d{1,20}$/.test(uid)){el.innerHTML='<span style="color:var(--red)">UID ต้องเป็นตัวเลข</span>';return}
+  el.innerHTML='<span style="color:var(--text3)">กำลังตรวจสอบ...</span>';
+  try{
+    const rows=await api(`players?uid=eq.${uid}&select=name,uid,cool_star_until`);
+    if(!rows.length){el.innerHTML=`<span style="color:var(--text3)">ไม่พบผู้เล่นที่ UID ${esc(uid)} ในระบบ</span>`;return}
+    el.innerHTML=rows.map(r=>{
+      const d=coolDaysLeft(r.cool_star_until);
+      return `<div>${esc(r.name)} · UID ${esc(r.uid)} — ${d>0
+        ?`<span style="color:var(--accent);font-weight:700">⭐ เหลือ ${d} วัน (ถึง ${esc(fmtDate(r.cool_star_until))})</span>`
+        :'<span style="color:var(--text3)">ไม่มีคูลดาว / หมดอายุแล้ว</span>'}</div>`;
+    }).join('');
+  }catch(e){el.innerHTML=`<span style="color:var(--red)">ตรวจสอบไม่สำเร็จ: ${esc(e.message)}</span>`}
+}
+
+// คูลดาว: เก็บวันหมดอายุใน players.cool_star_until (ว่างหรือหมดแล้ว = ไม่มีคูลดาว)
+const COOL_DAYS = 7;
+const DAY_MS = 24*60*60*1000;
+function coolDaysLeft(until){
+  const t=Date.parse(until||'');
+  return t>Date.now() ? Math.ceil((t-Date.now())/DAY_MS) : 0;
+}
+function fmtDate(v){ return new Date(v).toLocaleDateString('th-TH'); }
+
+// เพิ่มคูลดาว: รีเซ็ตให้มีอายุ 7 วันนับจากตอนนี้ (ไม่สะสมจากวันหมดอายุเดิม)
+async function addCoolStar(){
+  const pid = editId ?? tierOnlyId;
+  const uid = document.getElementById('f_uid').value.trim();
+  if(pid===null && !/^\d{1,20}$/.test(uid)){toast('กรุณาใส่ UID ก่อนเพิ่มคูลดาว',false);return}
+  try{
+    const q = pid!==null ? `id=eq.${pid}` : `uid=eq.${uid}`;
+    const rows = await api(`players?${q}&select=id,name,cool_star_until`);
+    const cur = rows?.[0];
+    if(!cur){toast('ไม่พบผู้เล่น UID นี้ในระบบ กดบันทึกผู้เล่นก่อนแล้วค่อยเพิ่มคูลดาว',false);return}
+    const next = new Date(Date.now() + COOL_DAYS*DAY_MS).toISOString();
+    await api(`players?id=eq.${cur.id}`, 'PATCH', {cool_star_until: next});
+    players = await api('players?order=name');
+    renderPlayerList();
+    updateClearCoolBtn();
+    toast(`⭐ เพิ่มคูลดาวให้ ${cur.name} แล้ว (เหลือ ${coolDaysLeft(next)} วัน)`);
+  }catch(e){toast('เพิ่มคูลดาวไม่สำเร็จ: '+e.message,false)}
+}
+
+// ปุ่มล้างคูลดาว (admin เท่านั้น) แสดงเฉพาะตอนแก้ไขผู้เล่นที่ยังมีคูลดาวอยู่
+function updateClearCoolBtn(){
+  const b=document.getElementById('clearCoolBtn');
+  if(!b) return;
+  const p = editId!==null ? players.find(x=>x.id===editId) : null;
+  b.style.display = p && coolDaysLeft(p.cool_star_until)>0 ? '' : 'none';
+}
+
+async function clearCoolStar(){
+  const p = players.find(x=>x.id===editId);
+  if(!p) return;
+  if(!confirm(`ล้างคูลดาวของ "${p.name}" ?`)) return;
+  try{
+    await api(`players?id=eq.${p.id}`, 'PATCH', {cool_star_until: null});
+    players = await api('players?order=name');
+    renderPlayerList();
+    updateClearCoolBtn();
+    toast('ล้างคูลดาวแล้ว');
+  }catch(e){toast('ล้างคูลดาวไม่สำเร็จ: '+e.message,false)}
 }
 
 // MODES
