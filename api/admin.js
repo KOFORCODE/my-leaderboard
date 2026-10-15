@@ -18,7 +18,7 @@ const ACCESS = {
   },
   tester: {
     modes: ['GET'],
-    players: ['GET', 'POST'],
+    players: ['GET', 'POST', 'PATCH'],
     player_tiers: ['GET', 'POST', 'PATCH'],
     site_settings: ['GET'],
   },
@@ -63,6 +63,7 @@ const FIELD_RULES = {
     region: (v) => (REGIONS.includes(v) ? null : 'ภูมิภาคไม่ถูกต้อง'),
     badge: (v) => (isEmpty(v) || (typeof v === 'string' && v.length <= 50) ? null : 'Badge ต้องไม่เกิน 50 ตัวอักษร'),
     avatar: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
+    cool_star_until: (v) => ((v === null || (typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date.parse(v)))) ? null : 'วันหมดอายุคูลดาวไม่ถูกต้อง'),
   },
   player_tiers: {
     player_id: (v) => (isId(v) ? null : 'player_id ไม่ถูกต้อง'),
@@ -127,9 +128,13 @@ function validateBody(table, method, body, role) {
     if (err) return err;
   }
 
-  // tester ตั้งตำแหน่ง (badge) และรูปผู้เล่นไม่ได้
-  if (role === 'tester' && table === 'players' && (!isEmpty(body.badge) || !isEmpty(body.avatar))) {
-    return 'บัญชี tester ตั้ง badge หรือรูปผู้เล่นไม่ได้';
+  // tester: แก้ผู้เล่นได้เฉพาะการเพิ่มคูลดาว (PATCH cool_star_until) ตั้ง badge/รูป/คูลดาวตอนสร้างไม่ได้
+  if (role === 'tester' && table === 'players') {
+    if (method === 'PATCH') {
+      if (keys.length !== 1 || keys[0] !== 'cool_star_until') return 'บัญชี tester แก้ได้เฉพาะการเพิ่มคูลดาว';
+    } else if (!isEmpty(body.badge) || !isEmpty(body.avatar) || body.cool_star_until !== undefined) {
+      return 'บัญชี tester ตั้ง badge, รูปผู้เล่น หรือคูลดาวตอนสร้างผู้เล่นไม่ได้';
+    }
   }
   return null;
 }
@@ -197,6 +202,17 @@ export default async function handler(req, res) {
     const body = readBody(req);
     const err = validateBody(table, method, body, role);
     if (err) return res.status(400).json({ error: err });
+
+    // tester ตั้งคูลดาวได้เฉพาะ "ตอนนี้ + 7 วัน" (กันตั้งวันหมดอายุไกลกว่านี้ผ่าน DevTools)
+    if (role === 'tester' && table === 'players' && method === 'PATCH') {
+      const next = Date.parse(body.cool_star_until);
+      const now = Date.now();
+      const TOLERANCE_MS = 60 * 1000; // เผื่อเวลาต่างกันระหว่าง client กับ server 1 นาที
+      if (!(next >= now - TOLERANCE_MS && next <= now + 7 * 24 * 60 * 60 * 1000 + TOLERANCE_MS)) {
+        return res.status(400).json({ error: 'เพิ่มคูลดาวได้ครั้งละ 7 วันนับจากตอนนี้เท่านั้น' });
+      }
+    }
+
     bodyText = JSON.stringify(body);
   }
 
