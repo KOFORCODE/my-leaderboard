@@ -198,7 +198,7 @@ body.readonly .edit-only{display:none!important}
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn btn-primary" onclick="savePlayer()">💾 บันทึก</button>
         <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">ยกเลิก</button>
-        <button class="btn btn-red edit-only" id="deleteBtn" onclick="deletePlayer(editId||tierOnlyId)" style="display:none;margin-left:auto">🗑️ ลบผู้เล่นนี้</button>
+        <button class="btn btn-red" id="deleteBtn" onclick="deletePlayer(editId||tierOnlyId)" style="display:none;margin-left:auto">🗑️ ลบผู้เล่นนี้</button>
       </div>
     </div>
 
@@ -571,7 +571,7 @@ function renderPlayerList(){
       <div class="p-item-actions">
         <button class="btn btn-primary" style="padding:5px 12px;font-size:0.78rem" onclick="addTierFor(${idArg(p.id)})">➕ Tier</button>
         <button class="btn btn-ghost edit-only" style="padding:5px 12px;font-size:0.78rem" onclick="editPlayer(${idArg(p.id)})">แก้ไข</button>
-        <button class="btn btn-red edit-only" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer(${idArg(p.id)})">ลบ</button>
+        <button class="btn btn-red" style="padding:5px 10px;font-size:0.78rem" onclick="deletePlayer(${idArg(p.id)})">🗑️ ลบ</button>
       </div>
     </div>`;
   }).join('');
@@ -673,7 +673,8 @@ function editPlayer(id){
 }
 
 async function deletePlayer(id){
-  if(!confirm('ลบผู้เล่นนี้?'))return;
+  const target=players.find(p=>p.id===id);
+  if(!confirm('ลบผู้เล่น "'+(target?target.name:'นี้')+'" ? ข้อมูล tier ทั้งหมดของผู้เล่นคนนี้จะหายไปด้วย'))return;
   try{
     await api(`players?id=eq.${id}`,'DELETE');
     toast('ลบแล้ว');
