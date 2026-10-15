@@ -302,8 +302,11 @@ const TIER_CLASS = {'S':'t-S','A+':'t-Ap','A':'t-A','A-':'t-Am','B+':'t-Bp','B':
 const TIER_SCORE = {'S':100,'A+':85,'A':75,'A-':65,'B+':54,'B':46,'B-':38,'C+':30,'C':25,'C-':20,'D+':16,'D':13,'D-':10,'F':0};
 
 let modes=[], players=[], tiers=[], activeMode='overall';
-const UNRANKED_IMG='https://i.postimg.cc/Cx4fsbpG/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(1).png';
-const LOW_POINTS_IMG='https://i.postimg.cc/vZXtHJBp/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(1).png';
+const UNRANKED_IMG='https://i.postimg.cc/RFnks3wd/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(2)-(1).png';
+const LOW_POINTS_IMG='https://i.postimg.cc/9fsS7Ws7/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(2)-(2).png';
+const MID_POINTS_IMG='https://i.postimg.cc/cCB52fCR/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(2)-(3).png';
+const HIGH_POINTS_IMG='https://i.postimg.cc/NMhJ0drN/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(2)-(4).png';
+const TOP_POINTS_IMG='https://i.postimg.cc/hPC2mDdd/845844097-28722740970726029-7656611028250855247-n-removebg-preview-(2)-(6).png';
 
 function esc(v){
   return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -422,10 +425,13 @@ function badgeClass(badge){
   return'badge-ace';
 }
 
-// รูปแทน avatar: Unranked ก่อนเสมอ, แท็บ Overall ที่คะแนนรวมต่ำกว่า 20 ใช้รูปคะแนนต่ำ
+// รูปแทน avatar: Unranked ก่อนเสมอ, แท็บ Overall: ต่ำกว่า 20 ใช้รูปคะแนนต่ำ, 20-50 ใช้รูปคะแนนกลาง
 function getAvatarImg(isUnranked, isOverall, pts){
   if(isUnranked) return UNRANKED_IMG;
   if(isOverall && pts<20) return LOW_POINTS_IMG;
+  if(isOverall && pts>=20 && pts<=50) return MID_POINTS_IMG;
+  if(isOverall && pts>=51 && pts<=100) return HIGH_POINTS_IMG;
+  if(isOverall && pts>=101) return TOP_POINTS_IMG;
   return '';
 }
 function renderRow(p, rank, scoreOrTier, isOverall, allModes, tiersByPlayer){
