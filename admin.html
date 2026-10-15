@@ -99,6 +99,11 @@ body.readonly .edit-only{display:none!important}
   .form-grid{grid-template-columns:1fr}
   main{padding:1rem}
 }
+
+/* TIER CHIP พร้อมปุ่มยกเลิก */
+.tier-chip{display:inline-flex;align-items:center;gap:2px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:1px 3px 1px 8px;margin:3px 4px 0 0;font-size:0.74rem;color:var(--text2)}
+.tier-x{background:none;border:none;color:var(--text3);cursor:pointer;font-size:0.72rem;padding:2px 5px;line-height:1;border-radius:4px;transition:all .15s}
+.tier-x:hover{color:var(--red);background:#ff4d6d18}
 </style>
 </head>
 <body>
@@ -198,6 +203,7 @@ body.readonly .edit-only{display:none!important}
       <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn btn-primary" onclick="savePlayer()">💾 บันทึก</button>
         <button class="btn btn-ghost" id="cancelBtn" onclick="cancelEdit()" style="display:none">ยกเลิก</button>
+        <button class="btn btn-red edit-only" id="removeTierBtn" onclick="removeTier()" style="display:none">❌ ยกเลิก Tier ใน mode นี้</button>
         <button class="btn btn-red" id="deleteBtn" onclick="deletePlayer(editId||tierOnlyId)" style="display:none;margin-left:auto">🗑️ ลบผู้เล่นนี้</button>
       </div>
     </div>
@@ -545,13 +551,15 @@ function buildModeSelect(selectedModeId=null){
 
 function onModeChange(){
   activeModeId = parseInt(document.getElementById('f_mode').value);
-  // โหลด tier ปัจจุบันของผู้เล่นที่กำลังแก้ไข
-  if(editId){
-    const pt = allTiers.find(t=>t.player_id===editId&&t.mode_id===activeModeId);
+  // โหลด tier ปัจจุบันของผู้เล่นที่กำลังแก้ไข / กำลังเพิ่ม Tier ให้
+  const pid = editId ?? tierOnlyId;
+  if(pid !== null){
+    const pt = allTiers.find(t=>t.player_id===pid&&t.mode_id===activeModeId);
     buildTierGrid(pt?.tier_type||'');
   } else {
     buildTierGrid();
   }
+  updateRemoveTierBtn();
 }
 
 // PLAYERS
@@ -573,7 +581,10 @@ function renderPlayerList(){
   }
   el.innerHTML=list.map(p=>{
     const pt=allTiers.filter(t=>t.player_id===p.id);
-    const tierStr=pt.length?pt.map(t=>{const m=modes.find(x=>x.id===t.mode_id);return esc((m?m.name:'?')+': '+t.tier_type)}).join(', '):'ยังไม่มี tier';
+    const tierStr=pt.length?pt.map(t=>{
+      const m=modes.find(x=>x.id===t.mode_id);
+      return `<span class="tier-chip">${esc((m?m.name:'?')+': '+t.tier_type)}<button type="button" class="tier-x edit-only" title="ยกเลิก Tier นี้" onclick="removeTierById(${idArg(t.id)})">✕</button></span>`;
+    }).join(''):'ยังไม่มี tier';
     const avUrl=safeUrl(p.avatar);
     return`<div class="p-item">
       <div class="p-item-avatar">${avUrl?`<img src="${esc(avUrl)}" onerror="this.style.display='none'">`:esc((String(p.name||'?')[0]||'?').toUpperCase())}</div>
@@ -602,6 +613,7 @@ function addTierFor(id){
   const pt=allTiers.find(t=>t.player_id===id&&t.mode_id===activeModeId);
   buildTierGrid(pt?.tier_type||'');
   document.getElementById('formLabel').textContent='➕ เพิ่ม Tier ให้: '+p.name;
+  updateRemoveTierBtn();
   document.getElementById('cancelBtn').style.display='';
   document.getElementById('deleteBtn').style.display='';
   document.getElementById('f_tier').scrollIntoView({behavior:'smooth',block:'center'});
@@ -682,6 +694,7 @@ function editPlayer(id){
   const pt=allTiers.find(t=>t.player_id===id&&t.mode_id===activeModeId);
   buildTierGrid(pt?.tier_type||'');
   document.getElementById('formLabel').textContent='✏️ แก้ไข: '+p.name;
+  updateRemoveTierBtn();
   document.getElementById('cancelBtn').style.display='';
   document.getElementById('deleteBtn').style.display='';
   document.getElementById('f_name').scrollIntoView({behavior:'smooth'});
@@ -700,6 +713,41 @@ async function deletePlayer(id){
   } catch(e){toast('ลบไม่สำเร็จ: '+e.message,false)}
 }
 
+// แสดงปุ่ม "ยกเลิก Tier ใน mode นี้" เฉพาะตอนผู้เล่นที่เลือกอยู่มี tier ใน mode ที่เลือกจริง
+function updateRemoveTierBtn(){
+  const b=document.getElementById('removeTierBtn');
+  if(!b) return;
+  const pid = editId ?? tierOnlyId;
+  const has = pid !== null && allTiers.some(x=>x.player_id===pid&&x.mode_id===activeModeId);
+  b.style.display = has ? '' : 'none';
+}
+
+// ยกเลิก (ลบ) tier แถวเดียว ผู้เล่นยังอยู่ในระบบ แค่ไม่มี tier ใน mode นั้น
+async function removeTierById(tierId){
+  const t=allTiers.find(x=>x.id===tierId);
+  if(!t) return;
+  const p=players.find(x=>x.id===t.player_id);
+  const m=modes.find(x=>x.id===t.mode_id);
+  if(!confirm(`ยกเลิก Tier ${t.tier_type} ของ "${p?p.name:'ผู้เล่น'}" ในโหมด "${m?m.name:'?'}" ?\nผู้เล่นจะยังอยู่ในระบบ แต่จะไม่มี Tier ในโหมดนี้`)) return;
+  try{
+    await api(`player_tiers?id=eq.${tierId}`,'DELETE');
+    allTiers=allTiers.filter(x=>x.id!==tierId);
+    toast('✅ ยกเลิก Tier แล้ว');
+    // ถ้ากำลังเปิดฟอร์มของผู้เล่นคนนี้ใน mode นี้อยู่ ให้ล้างตัวเลือกใน grid ด้วย
+    if((editId ?? tierOnlyId)===t.player_id && activeModeId===t.mode_id) buildTierGrid();
+    renderPlayerList();
+    updateRemoveTierBtn();
+  } catch(e){toast('ยกเลิก Tier ไม่สำเร็จ: '+e.message,false)}
+}
+
+// ปุ่มในฟอร์ม: ยกเลิก tier ของผู้เล่นที่เลือกอยู่ ใน mode ที่เลือกอยู่
+function removeTier(){
+  const pid = editId ?? tierOnlyId;
+  const t = pid===null ? null : allTiers.find(x=>x.player_id===pid&&x.mode_id===activeModeId);
+  if(!t){toast('ผู้เล่นนี้ยังไม่มี Tier ใน mode นี้',false);return}
+  return removeTierById(t.id);
+}
+
 function cancelEdit(){
   editId=null;
   tierOnlyId=null;
@@ -712,6 +760,7 @@ function cancelEdit(){
   document.getElementById('formLabel').textContent='➕ เพิ่มผู้เล่น';
   document.getElementById('cancelBtn').style.display='none';
   document.getElementById('deleteBtn').style.display='none';
+  updateRemoveTierBtn();
 }
 
 // MODES
