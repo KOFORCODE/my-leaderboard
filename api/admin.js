@@ -1,19 +1,4 @@
-// /api/admin.js
-// Vercel Serverless Function — proxy คำขอจากหน้า admin.html ไปยัง Supabase
-// โดยใช้ SUPABASE_SECRET_KEY ที่อ่านจาก Environment Variable เท่านั้น
-// คีย์นี้จะไม่ปรากฏในโค้ดฝั่ง client หรือใน git repo เลย
-//
-// สิทธิ์:
-//   ADMIN_PW  -> แอดมิน ทำได้ทุกอย่างกับ 4 ตารางที่หน้า admin ใช้
-//   TESTER_PW -> tester ดูได้ทั้งหมด เพิ่มได้เฉพาะตาราง players / player_tiers
-//                แก้ไขได้เฉพาะตาราง player_tiers (tier) ลบไม่ได้เลย
-//                ตั้ง badge / รูปผู้เล่นไม่ได้
-//                บังคับที่ฝั่งเซิร์ฟเวอร์
-//
-// ความปลอดภัยเพิ่มเติม (ทุก role):
-//   - path ต้องเป็นชื่อตารางในรายการอนุญาตเท่านั้น (กัน ../ ไปยิง endpoint อื่นของ Supabase ด้วย secret key)
-//   - PATCH / DELETE ต้องระบุแถวด้วย id=eq.<id> เสมอ (กันแก้/ลบทั้งตารางโดยไม่ตั้งใจ)
-//   - ตรวจฟิลด์และค่าของข้อมูลที่เขียน (กันข้อความแปลกๆ / ลิงก์ javascript: เข้าฐานข้อมูล)
+
 
 import { timingSafeEqual } from 'node:crypto';
 
@@ -23,8 +8,7 @@ const REGIONS = [
   'US', 'NA', 'ME', 'RU', 'CIS', 'EUROPE', 'AS', 'EU',
 ];
 
-// ตารางที่หน้า admin ใช้จริง + method ที่แต่ละ role เรียกได้
-// ถ้าเพิ่มตารางใหม่ในอนาคต ต้องมาเพิ่มที่นี่ (และเพิ่มกฎใน FIELD_RULES ถ้าต้องเขียนข้อมูล)
+
 const ACCESS = {
   admin: {
     modes: ['GET', 'POST', 'PATCH', 'DELETE'],
