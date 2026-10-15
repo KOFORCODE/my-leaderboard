@@ -572,18 +572,23 @@ async function load(){
       tiers=tiersData;
     }
 
+    // กันข้อมูลที่ tier_type ไม่ใช่ค่าที่กำหนด (เช่น ถูกใส่ข้อความแปลกๆ เข้าฐานข้อมูล) ไม่ให้เข้าหน้าเว็บ
+    tiers = (tiers||[]).filter(t=>TIER_ORDER.includes(t.tier_type));
+    // รับเฉพาะลิงก์ http/https ที่ตั้งจากหน้า admin (กัน javascript: เข้ามาทางลิงก์บนแถบเมนู)
+    const okUrl = u => /^https?:\/\//i.test(String(u||'').trim());
+
     // โหลด settings เสมอ (ทั้งเคส RPC สำเร็จและล้มเหลว)
     const settingsData = await api('site_settings?id=eq.1').catch(()=>[]);
     const settings = settingsData?.[0];
-    if(settings?.discord_url){
+    if(okUrl(settings?.discord_url)){
       const discordLink = document.getElementById('discordLink');
       if(discordLink) discordLink.href = settings.discord_url;
     }
-    if(settings?.rankings_url){
+    if(okUrl(settings?.rankings_url)){
       const rankingsLink = document.getElementById('rankingsLink');
       if(rankingsLink) rankingsLink.href = settings.rankings_url;
     }
-    if(settings?.api_docs_url){
+    if(okUrl(settings?.api_docs_url)){
       const apiDocsLink = document.getElementById('apiDocsLink');
       if(apiDocsLink) apiDocsLink.href = settings.api_docs_url;
     }
