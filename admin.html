@@ -683,6 +683,13 @@ async function savePlayer(){
       }
     }
 
+    // คูลดาวอัตโนมัติ: ถ้าผู้เล่นยังไม่มีคูลดาวที่ใช้งานอยู่ ให้เริ่มนับ 7 วันทันทีหลังบันทึก
+    // (ถ้ายังมีคูลดาวเดิมเหลืออยู่ ไม่ต่อเวลาให้ เพื่อกันการแก้ชื่อ/รูปแล้วรีเซ็ตวันหมดอายุโดยไม่ตั้งใจ)
+    const cur = editId ? players.find(p=>p.id===editId) : null;
+    if(!cur || coolDaysLeft(cur.cool_star_until)<=0){
+      await api(`players?id=eq.${pid}`, 'PATCH', {cool_star_until: new Date(Date.now()+COOL_DAYS*DAY_MS).toISOString()});
+    }
+
     toast(editId?'✅ แก้ไขสำเร็จ':'✅ เพิ่มผู้เล่นสำเร็จ');
     cancelEdit();
     [players, allTiers]=await Promise.all([api('players?order=name'),api('player_tiers?select=*')]);
