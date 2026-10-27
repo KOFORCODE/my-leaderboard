@@ -498,6 +498,7 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 const SUPABASE_URL = 'https://qfdtnfhcdxucckxakrgu.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_XGA4PQ3GY1LpEmSSRTyONg_2ogqR06G';
 
+const MAX_ROW = 100;
 const TIER_ORDER = ['S','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
 const TIER_CLASS = {'S':'t-S','A+':'t-Ap','A':'t-A','A-':'t-Am','B+':'t-Bp','B':'t-B','B-':'t-Bm','C+':'t-Cp','C':'t-C','C-':'t-Cm','D+':'t-Dp','D':'t-D','D-':'t-Dm','F':'t-F'};
 const TIER_SCORE = {'S':100,'A+':85,'A':75,'A-':65,'B+':54,'B':46,'B-':38,'C+':30,'C':25,'C-':20,'D+':16,'D':13,'D-':10,'F':0};
@@ -835,7 +836,8 @@ function render(){
     document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีผู้เล่นใน mode นี้</p></div>`;
     return;
   }
-  document.getElementById('tableBody').innerHTML=list.map((p,i)=>
+    // แสดงในตารางแค่ MAX_ROWS อันดับแรก
+  document.getElementById('tableBody').innerHTML=list.slice(0,MAX_ROWS).map((p,i)=>
     renderRow(p, i+1, tierMap[p.id]?.tier_type||'F', false, selectedModes, tiersByPlayer)
   ).join('');
 }
