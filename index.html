@@ -498,7 +498,7 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 const SUPABASE_URL = 'https://qfdtnfhcdxucckxakrgu.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_XGA4PQ3GY1LpEmSSRTyONg_2ogqR06G';
 
-const MAX_ROW = 100;
+const MAX_ROWS = 100; // ตารางแสดงสูงสุด 100 อันดับ
 const TIER_ORDER = ['S','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
 const TIER_CLASS = {'S':'t-S','A+':'t-Ap','A':'t-A','A-':'t-Am','B+':'t-Bp','B':'t-B','B-':'t-Bm','C+':'t-Cp','C':'t-C','C-':'t-Cm','D+':'t-Dp','D':'t-D','D-':'t-Dm','F':'t-F'};
 const TIER_SCORE = {'S':100,'A+':85,'A':75,'A-':65,'B+':54,'B':46,'B-':38,'C+':30,'C':25,'C-':20,'D+':16,'D':13,'D-':10,'F':0};
@@ -710,7 +710,7 @@ function updateBanner(){
   const b=document.getElementById('banner');
   if(!b) return;
   b.style.display='block';
-  countUp(document.getElementById('bsPlayers'),players.length);
+  countUp(document.getElementById('bsPlayers'),Math.min(players.length,MAX_ROWS));
   countUp(document.getElementById('bsModes'),modes.length);
   countUp(document.getElementById('bsTiers'),tiers.length);
   bannerAnimated=true;
@@ -780,6 +780,8 @@ function render(){
       // คะแนนเท่ากัน: ใครได้ tier แถวแรกก่อน (id น้อยกว่า) อยู่บนกว่า คนที่เพิ่มทีหลังจึงเป็นรอง
       return (firstTierId[a.id]??0)-(firstTierId[b.id]??0);
     });
+    // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก อันดับที่ 101 ขึ้นไปไม่แสดงทั้งตาราง, แท่น, และตัวเลขผู้เล่น
+    list.splice(MAX_ROWS);
 
     document.getElementById('heroStats').innerHTML=`
       <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่นทั้งหมด</div><div class="stat-val">${list.length}<small>คน</small></div></div></div>
@@ -795,6 +797,7 @@ function render(){
     }
     // อันดับ 1-3 แสดงบนแท่นด้านบนแล้ว ตารางเริ่มที่อันดับ 4 (ถ้ามีผู้เล่นน้อยกว่า 3 คน ไม่มีแท่น ตารางแสดงครบ)
     const hasPodium=list.length>=3;
+    // list ถูกตัดที่ MAX_ROWS แล้ว ตารางจึงมีไม่เกิน MAX_ROWS แถว (รวมแท่น 1-3)
     const rowList=hasPodium?list.slice(3):list;
     const rankOffset=hasPodium?4:1;
     document.getElementById('tableBody').innerHTML=rowList.length
@@ -815,6 +818,8 @@ function render(){
     // tier เท่ากัน: ใครได้ rank นี้ก่อน (id แถว player_tiers น้อยกว่า) อยู่บนกว่าเสมอ
     return (tierMap[a.id]?.id??0)-(tierMap[b.id]?.id??0);
   });
+  // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก
+  list.splice(MAX_ROWS);
 
   const counts={};
   TIER_ORDER.forEach(t=>counts[t]=0);
@@ -836,8 +841,7 @@ function render(){
     document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">🏆</div><p>ยังไม่มีผู้เล่นใน mode นี้</p></div>`;
     return;
   }
-    // แสดงในตารางแค่ MAX_ROWS อันดับแรก
-  document.getElementById('tableBody').innerHTML=list.slice(0,MAX_ROWS).map((p,i)=>
+  document.getElementById('tableBody').innerHTML=list.map((p,i)=>
     renderRow(p, i+1, tierMap[p.id]?.tier_type||'F', false, selectedModes, tiersByPlayer)
   ).join('');
 }
