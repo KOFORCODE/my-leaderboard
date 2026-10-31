@@ -425,6 +425,12 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 .mc-bar i{display:block;height:100%;border-radius:4px;transform-origin:left;animation:barIn .8s cubic-bezier(.22,1,.36,1) backwards;animation-delay:.3s}
 .mc-tier .tier-mini{height:24px;min-width:42px;font-size:.78rem;flex-shrink:0}
 .mc-empty{color:var(--text3);text-align:center;padding:1rem;font-size:.85rem;background:var(--bg3);border:1px solid var(--border);border-radius:12px}
+.mc-spark{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
+.mc-spark-top{display:flex;justify-content:space-between;align-items:center;font-family:var(--font-display);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
+.mc-spark-top b{color:var(--text1);font-weight:700}
+.mc-spark .tier-mini{height:20px;min-width:34px;font-size:.7rem;margin-left:4px}
+.mc-spark-svg{width:100%;height:auto;display:block}
+.mc-spark-foot{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.62rem;color:var(--text3);margin-top:4px}
 @keyframes mcIn{from{opacity:0;transform:translateY(12px)}}
 @keyframes barIn{from{transform:scaleX(0)}}
 @media(prefers-reduced-motion:reduce){.mc-hero,.mc-stats,.mc-tiers,.mc-bar i{animation:none!important}}
@@ -1022,6 +1028,7 @@ function openModal(pid, rank, pts, tempPlayer){
       <div class="mc-stat"><div class="mc-stat-label">Modes</div><div class="mc-stat-val">${playerTierCount}<small>/${modes.length}</small></div></div>
     </div>
     ${isUnranked?`<div style="text-align:center;color:var(--text3);font-size:.76rem;margin-top:8px">🚫 Unranked — ยังไม่มีข้อมูลแรงค์</div>`:''}
+    ${isTemp?'':`<div class="modal-section" id="mcHistory" data-pid="${esc(pid)}"><div class="modal-section-title">Tier Progression</div><div class="mc-empty">กำลังโหลด...</div></div>`}
     ${hasTiers||isTemp?`<div class="modal-section">
       <div class="modal-section-title">Tiers</div>
       <div class="mc-tiers">${hasTiers?tiersHtml:'<div class="mc-empty">ยังไม่มี Tier</div>'}</div>
@@ -1032,10 +1039,49 @@ function openModal(pid, rank, pts, tempPlayer){
     </div>`:''}
   `;
 
+  if(!isTemp) loadTierHistory(pid);
   const bd=document.getElementById('modalBackdrop');
   bd.style.display='flex';
   requestAnimationFrame(()=>bd.classList.add('show'));
   document.body.style.overflow='hidden';
+}
+
+// ประวัติ Tier ของผู้เล่นในการ์ด: แสดงตามโหมดที่เลือกอยู่ (Overall = ทุกโหมด), ใหม่สุดอยู่บน
+async function loadTierHistory(pid){
+  try{
+    const rows=await apiWithTimeout(`tier_history?select=*&player_id=eq.${encodeURIComponent(pid)}&order=changed_at.asc&limit=500`);
+    const el=document.getElementById('mcHistory');
+    if(!el||el.dataset.pid!==String(pid)) return; // การ์ดถูกเปิดคนอื่นหรือปิดไปแล้ว
+    // เฉพาะ Tier ที่ได้ (ไม่รวมตอนยกเลิก) ตามโหมดที่เลือก เรียงเก่า → ใหม่
+    const list=rows.filter(r=>r.new_tier && (activeMode==='overall'||String(r.mode_id)===String(activeMode)));
+    el.innerHTML=renderTierSparkline(list);
+  }catch(err){
+    const el=document.getElementById('mcHistory');
+    if(el&&el.dataset.pid===String(pid)) el.innerHTML=`<div class="modal-section-title">Tier Progression</div><div class="mc-empty">โหลดประวัติไม่สำเร็จ</div>`;
+  }
+}
+
+// กราฟเส้น Tier ตามเวลา: แกนตั้ง = คะแนน Tier, Peak = Tier ที่ดีที่สุดที่เคยได้, Avg = คะแนนเฉลี่ย
+function renderTierSparkline(list){
+  const head=`<div class="modal-section-title">Tier Progression</div>`;
+  if(!list.length) return head+`<div class="mc-empty">ยังไม่มีประวัติ Tier</div>`;
+  const W=300, H=70, P=8;
+  const scores=list.map(r=>TIER_SCORE[r.new_tier]||0);
+  const pts=scores.map((s,i)=>{
+    const x=list.length===1?W/2:P+i*(W-2*P)/(list.length-1);
+    const y=H-P-(s/100)*(H-2*P);
+    return [x.toFixed(1),y.toFixed(1)];
+  });
+  const line=pts.length>1?`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>`:'';
+  const dots=pts.map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="3.5" fill="${TIER_HEX[list[i].new_tier]||'#777'}"/>`).join('');
+  const best=list.reduce((b,r)=>(tierScore(r.new_tier)<tierScore(b.new_tier)?r:b));
+  const avg=Math.round(scores.reduce((s,v)=>s+v,0)/scores.length);
+  const fmt=v=>new Date(v).toLocaleDateString('th-TH',{dateStyle:'medium'});
+  return head+`<div class="mc-spark">
+    <div class="mc-spark-top"><span>Peak: <span class="tier-mini ${TIER_CLASS[best.new_tier]||'t-F'}">${esc(best.new_tier)}</span></span><span>Avg: <b>${avg} pts</b></span></div>
+    <svg class="mc-spark-svg" viewBox="0 0 ${W} ${H}">${line}${dots}</svg>
+    <div class="mc-spark-foot"><span>${esc(fmt(list[0].changed_at))}</span><span>${esc(fmt(list[list.length-1].changed_at))}</span></div>
+  </div>`;
 }
 
 const RANK_COLORS={1:'#f5c842',2:'#c8d0de',3:'#e09060'};
