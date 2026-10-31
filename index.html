@@ -425,10 +425,9 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 .mc-bar i{display:block;height:100%;border-radius:4px;transform-origin:left;animation:barIn .8s cubic-bezier(.22,1,.36,1) backwards;animation-delay:.3s}
 .mc-tier .tier-mini{height:24px;min-width:42px;font-size:.78rem;flex-shrink:0}
 .mc-empty{color:var(--text3);text-align:center;padding:1rem;font-size:.85rem;background:var(--bg3);border:1px solid var(--border);border-radius:12px}
-.mc-hist-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.mc-hist-tab{padding:4px 11px;border-radius:999px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:var(--font-mono);font-size:.7rem;font-weight:600;cursor:pointer;transition:all .15s}
-.mc-hist-tab:hover{border-color:#f2b93e55}
-.mc-hist-tab.on{background:var(--accent-soft);border-color:var(--accent);color:var(--text1)}
+.mc-tier[data-mid]{cursor:pointer;transition:border-color .15s,background .15s}
+.mc-tier[data-mid]:hover{border-color:#f2b93e55}
+.mc-tier[data-mid].on{border-color:var(--accent);background:var(--accent-soft)}
 .mc-spark{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
 .mc-spark-top{display:flex;justify-content:space-between;align-items:center;font-family:var(--font-display);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
 .mc-spark-top b{color:var(--text1);font-weight:700}
@@ -977,7 +976,7 @@ function openModal(pid, rank, pts, tempPlayer){
     const iconContent=m.icon_url?`<img src="${esc(m.icon_url)}" alt="${esc(m.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`:esc(m.icon||'🎮');
     const pct=Math.max(4,TIER_SCORE[tier]||0);
     const hex=TIER_HEX[tier]||'#777';
-    return`<div class="mc-tier">
+    return`<div class="mc-tier" data-mid="${esc(m.id)}" onclick="pickHistMode(${jsArg(m.id)})" title="ดูประวัติโหมดนี้">
       <div class="mode-icon">${iconContent}</div>
       <div class="mc-tier-main">
         <div class="mc-tier-name">${esc(m.name)}</div>
@@ -1059,29 +1058,32 @@ async function loadTierHistory(pid){
     histCache={pid, rows, mode: activeMode}; // เก็บไว้ให้ปุ่มเลือกโหมดในการ์ดสลับกราฟได้โดยไม่ต้องโหลดใหม่
     renderHistory();
   }catch(err){
+    // โหลดไม่ได้ (เช่น ยังไม่ได้รัน tier_history.sql) ก็ยังแสดงปุ่มโหมดไว้ ให้เห็นว่าส่วนนี้มีอยู่
     const el=document.getElementById('mcHistory');
-    if(el&&el.dataset.pid===String(pid)) el.innerHTML=`<div class="modal-section-title">Tier Progression</div><div class="mc-empty">โหลดประวัติไม่สำเร็จ</div>`;
+    if(!el||el.dataset.pid!==String(pid)) return;
+    histCache={pid, rows:[], mode: activeMode, failed:true};
+    renderHistory();
   }
 }
 
-let histCache=null; // {pid, rows, mode} ประวัติของการ์ดที่เปิดอยู่
+let histCache=null; // {pid, rows, mode, failed} ประวัติของการ์ดที่เปิดอยู่
 
-// วาดส่วนประวัติใหม่ตามโหมดที่เลือกในการ์ด (ปุ่ม Overall + ทุกโหมด)
+// วาดส่วนประวัติใหม่ตามโหมดที่เลือก (Overall = ทุกโหมด) และไฮไลต์แถวโหมดใน Tiers
 function renderHistory(){
   const el=document.getElementById('mcHistory');
   if(!el||!histCache||el.dataset.pid!==String(histCache.pid)) return;
   const sel=histCache.mode;
   const list=histCache.rows.filter(r=>r.new_tier && (sel==='overall'||String(r.mode_id)===String(sel)));
-  const label=sel==='overall'?'':modes.find(m=>String(m.id)===String(sel))?.name;
-  const tabs=[{id:'overall',name:'Overall'},...modes.map(m=>({id:m.id,name:m.name}))]
-    .map(t=>`<button type="button" class="mc-hist-tab${String(t.id)===String(sel)?' on':''}" onclick="setHistMode(${jsArg(t.id)})">${esc(t.name)}</button>`).join('');
-  el.innerHTML=`<div class="modal-section-title">Tier Progression${label?` · ${esc(label)}`:''}</div>
-    <div class="mc-hist-tabs">${tabs}</div>${renderTierSparkline(list)}`;
+  const label=sel==='overall'?'Overall':modes.find(m=>String(m.id)===String(sel))?.name;
+  el.innerHTML=`<div class="modal-section-title">Tier Progression · ${esc(label||'')}</div>
+    ${histCache.failed?'<div class="mc-empty">โหลดประวัติไม่สำเร็จ (ตรวจว่ารัน sql/tier_history.sql แล้ว)</div>':renderTierSparkline(list)}`;
+  document.querySelectorAll('#modalInner .mc-tier[data-mid]').forEach(row=>row.classList.toggle('on', String(row.dataset.mid)===String(sel)));
 }
 
-function setHistMode(id){
+// กดแถวโหมดใน Tiers: แสดงกราฟโหมดนั้น กดซ้ำเพื่อกลับไป Overall
+function pickHistMode(id){
   if(!histCache) return;
-  histCache.mode=id;
+  histCache.mode = String(histCache.mode)===String(id) ? 'overall' : id;
   renderHistory();
 }
 
