@@ -425,6 +425,10 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 .mc-bar i{display:block;height:100%;border-radius:4px;transform-origin:left;animation:barIn .8s cubic-bezier(.22,1,.36,1) backwards;animation-delay:.3s}
 .mc-tier .tier-mini{height:24px;min-width:42px;font-size:.78rem;flex-shrink:0}
 .mc-empty{color:var(--text3);text-align:center;padding:1rem;font-size:.85rem;background:var(--bg3);border:1px solid var(--border);border-radius:12px}
+.mc-hist-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.mc-hist-tab{padding:4px 11px;border-radius:999px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2);font-family:var(--font-mono);font-size:.7rem;font-weight:600;cursor:pointer;transition:all .15s}
+.mc-hist-tab:hover{border-color:#f2b93e55}
+.mc-hist-tab.on{background:var(--accent-soft);border-color:var(--accent);color:var(--text1)}
 .mc-spark{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
 .mc-spark-top{display:flex;justify-content:space-between;align-items:center;font-family:var(--font-display);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);margin-bottom:6px}
 .mc-spark-top b{color:var(--text1);font-weight:700}
@@ -1052,19 +1056,38 @@ async function loadTierHistory(pid){
     const rows=await apiWithTimeout(`tier_history?select=*&player_id=eq.${encodeURIComponent(pid)}&order=changed_at.asc&limit=500`);
     const el=document.getElementById('mcHistory');
     if(!el||el.dataset.pid!==String(pid)) return; // การ์ดถูกเปิดคนอื่นหรือปิดไปแล้ว
-    // เฉพาะ Tier ที่ได้ (ไม่รวมตอนยกเลิก) ตามโหมดที่เลือก เรียงเก่า → ใหม่
-    const list=rows.filter(r=>r.new_tier && (activeMode==='overall'||String(r.mode_id)===String(activeMode)));
-    el.innerHTML=renderTierSparkline(list);
+    histCache={pid, rows, mode: activeMode}; // เก็บไว้ให้ปุ่มเลือกโหมดในการ์ดสลับกราฟได้โดยไม่ต้องโหลดใหม่
+    renderHistory();
   }catch(err){
     const el=document.getElementById('mcHistory');
     if(el&&el.dataset.pid===String(pid)) el.innerHTML=`<div class="modal-section-title">Tier Progression</div><div class="mc-empty">โหลดประวัติไม่สำเร็จ</div>`;
   }
 }
 
+let histCache=null; // {pid, rows, mode} ประวัติของการ์ดที่เปิดอยู่
+
+// วาดส่วนประวัติใหม่ตามโหมดที่เลือกในการ์ด (ปุ่ม Overall + ทุกโหมด)
+function renderHistory(){
+  const el=document.getElementById('mcHistory');
+  if(!el||!histCache||el.dataset.pid!==String(histCache.pid)) return;
+  const sel=histCache.mode;
+  const list=histCache.rows.filter(r=>r.new_tier && (sel==='overall'||String(r.mode_id)===String(sel)));
+  const label=sel==='overall'?'':modes.find(m=>String(m.id)===String(sel))?.name;
+  const tabs=[{id:'overall',name:'Overall'},...modes.map(m=>({id:m.id,name:m.name}))]
+    .map(t=>`<button type="button" class="mc-hist-tab${String(t.id)===String(sel)?' on':''}" onclick="setHistMode(${jsArg(t.id)})">${esc(t.name)}</button>`).join('');
+  el.innerHTML=`<div class="modal-section-title">Tier Progression${label?` · ${esc(label)}`:''}</div>
+    <div class="mc-hist-tabs">${tabs}</div>${renderTierSparkline(list)}`;
+}
+
+function setHistMode(id){
+  if(!histCache) return;
+  histCache.mode=id;
+  renderHistory();
+}
+
 // กราฟเส้น Tier ตามเวลา: แกนตั้ง = คะแนน Tier, Peak = Tier ที่ดีที่สุดที่เคยได้, Avg = คะแนนเฉลี่ย
 function renderTierSparkline(list){
-  const head=`<div class="modal-section-title">Tier Progression</div>`;
-  if(!list.length) return head+`<div class="mc-empty">ยังไม่มีประวัติ Tier</div>`;
+  if(!list.length) return `<div class="mc-empty">ยังไม่มีประวัติ Tier</div>`;
   const W=300, H=70, P=8;
   const scores=list.map(r=>TIER_SCORE[r.new_tier]||0);
   const pts=scores.map((s,i)=>{
@@ -1077,7 +1100,7 @@ function renderTierSparkline(list){
   const best=list.reduce((b,r)=>(tierScore(r.new_tier)<tierScore(b.new_tier)?r:b));
   const avg=Math.round(scores.reduce((s,v)=>s+v,0)/scores.length);
   const fmt=v=>new Date(v).toLocaleDateString('th-TH',{dateStyle:'medium'});
-  return head+`<div class="mc-spark">
+  return `<div class="mc-spark">
     <div class="mc-spark-top"><span>Peak: <span class="tier-mini ${TIER_CLASS[best.new_tier]||'t-F'}">${esc(best.new_tier)}</span></span><span>Avg: <b>${avg} pts</b></span></div>
     <svg class="mc-spark-svg" viewBox="0 0 ${W} ${H}">${line}${dots}</svg>
     <div class="mc-spark-foot"><span>${esc(fmt(list[0].changed_at))}</span><span>${esc(fmt(list[list.length-1].changed_at))}</span></div>
