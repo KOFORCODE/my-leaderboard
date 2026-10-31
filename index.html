@@ -710,7 +710,7 @@ function updateBanner(){
   const b=document.getElementById('banner');
   if(!b) return;
   b.style.display='block';
-  countUp(document.getElementById('bsPlayers'),Math.min(players.length,MAX_ROWS));
+  countUp(document.getElementById('bsPlayers'),players.length);
   countUp(document.getElementById('bsModes'),modes.length);
   countUp(document.getElementById('bsTiers'),tiers.length);
   bannerAnimated=true;
@@ -780,11 +780,11 @@ function render(){
       // คะแนนเท่ากัน: ใครได้ tier แถวแรกก่อน (id น้อยกว่า) อยู่บนกว่า คนที่เพิ่มทีหลังจึงเป็นรอง
       return (firstTierId[a.id]??0)-(firstTierId[b.id]??0);
     });
-    // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก อันดับที่ 101 ขึ้นไปไม่แสดงทั้งตาราง, แท่น, และตัวเลขผู้เล่น
+    // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก อันดับที่ 101 ขึ้นไปไม่แสดงในตารางและแท่น (ตัวเลขผู้เล่นใช้จำนวนจริง)
     list.splice(MAX_ROWS);
 
     document.getElementById('heroStats').innerHTML=`
-      <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่นทั้งหมด</div><div class="stat-val">${list.length}<small>คน</small></div></div></div>
+      <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่นทั้งหมด</div><div class="stat-val">${players.length}<small>คน</small></div></div></div>
       <div class="stat-card"><span class="stat-icon">🎮</span><div class="stat-info"><div class="stat-label">Mode ที่นับ</div><div class="stat-val">${overallModes.length}<small>mode</small></div></div></div>
       <div class="stat-card"><span class="stat-icon">⭐</span><div class="stat-info"><div class="stat-label">คะแนนสูงสุด</div><div class="stat-val">${list.length?scoreMap[list[0].id]:0}<small>pts</small></div></div></div>
     `;
@@ -818,7 +818,8 @@ function render(){
     // tier เท่ากัน: ใครได้ rank นี้ก่อน (id แถว player_tiers น้อยกว่า) อยู่บนกว่าเสมอ
     return (tierMap[a.id]?.id??0)-(tierMap[b.id]?.id??0);
   });
-  // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก
+  // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก (ตัวเลขผู้เล่นใช้จำนวนจริงก่อนตัด)
+  const total=list.length;
   list.splice(MAX_ROWS);
 
   const counts={};
@@ -827,7 +828,7 @@ function render(){
   const topTier=TIER_ORDER.find(t=>counts[t]>0)||'-';
 
   document.getElementById('heroStats').innerHTML=`
-    <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่น</div><div class="stat-val">${list.length}<small>คน</small></div></div></div>
+    <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่น</div><div class="stat-val">${total}<small>คน</small></div></div></div>
     <div class="stat-card"><span class="stat-icon">🥇</span><div class="stat-info"><div class="stat-label">Tier สูงสุด</div><div class="stat-val">${topTier}</div></div></div>
     <div class="stat-card"><span class="stat-icon">⭐</span><div class="stat-info"><div class="stat-label">S Tier</div><div class="stat-val">${counts['S']}<small>คน</small></div></div></div>
   `;
