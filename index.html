@@ -437,10 +437,9 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 @keyframes mcIn{from{opacity:0;transform:translateY(12px)}}
 @keyframes barIn{from{transform:scaleX(0)}}
 @media(prefers-reduced-motion:reduce){.mc-hero,.mc-stats,.mc-tiers,.mc-bar i{animation:none!important}}
-.mc-share{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;padding:11px;border-radius:12px;border:1px solid #f2b93e55;background:var(--accent-soft);color:var(--accent);font-family:var(--font-display);font-size:.9rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:background .15s,transform .1s}
-.mc-share:hover{background:#f2b93e28}
-.mc-share:active{transform:scale(.98)}
-.mc-share:disabled{opacity:.6;cursor:wait}
+button.mc-share{cursor:pointer;color:var(--accent);border-color:#f2b93e55;background:var(--accent-soft);transition:background .15s,opacity .15s}
+button.mc-share:hover{background:#f2b93e28}
+button.mc-share:disabled{opacity:.6;cursor:wait}
 </style>
 </head>
 <body>
@@ -1047,6 +1046,7 @@ function openModal(pid, rank, pts, tempPlayer){
         <span class="mc-chip">🌏 ${esc(regionLabels[reg]||reg)}</span>
         ${p.badge?`<span class="modal-badge ${bclass}">◈ ${badge}</span>`:''}
         ${p.uid?`<button type="button" class="mc-chip mc-uid" onclick="copyUid(this,${jsArg(String(p.uid))})" title="คัดลอก UID">UID <b>${esc(p.uid)}</b><span class="mc-copy">📋</span></button>`:''}
+        <button type="button" class="mc-chip mc-share" onclick="shareCard(this)" title="แชร์การ์ดเป็นรูป">📤 แชร์</button>
       </div>
     </div>
     <div class="mc-stats">
@@ -1064,7 +1064,6 @@ function openModal(pid, rank, pts, tempPlayer){
       <div style="font-size:0.75rem;color:var(--text2);text-align:center;margin-bottom:8px">เทสเทียร์ กดตรงนี้</div>
       <a href="${document.getElementById('discordLink')?.href||'#'}" target="_blank" style="font-size:0.8rem;color:var(--accent);font-weight:600;text-align:center;text-decoration:none;display:block">[ COMBOO 500 ]</a>
     </div>`:''}
-    <button type="button" class="mc-share" onclick="shareCard(this)">📤 แชร์การ์ด</button>
   `;
 
   if(!isTemp) loadTierHistory(pid);
