@@ -437,9 +437,13 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 @keyframes mcIn{from{opacity:0;transform:translateY(12px)}}
 @keyframes barIn{from{transform:scaleX(0)}}
 @media(prefers-reduced-motion:reduce){.mc-hero,.mc-stats,.mc-tiers,.mc-bar i{animation:none!important}}
-button.mc-share{cursor:pointer;color:var(--accent);border-color:#f2b93e55;background:var(--accent-soft);transition:background .15s,opacity .15s}
-button.mc-share:hover{background:#f2b93e28}
+/* แถวแชร์การ์ด: แยกจากชิปข้อมูลและปุ่มเทสเทียร์ท้ายการ์ด */
+.mc-share-row{margin:14px 0 2px;padding-top:12px;border-top:1px dashed var(--border2)}
+button.mc-share{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid #f2b93e66;background:linear-gradient(135deg,#f2b93e26,#f2b93e0d);color:var(--accent);font-family:var(--font-display);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:background .15s,transform .1s,opacity .15s}
+button.mc-share:hover{background:linear-gradient(135deg,#f2b93e38,#f2b93e15)}
+button.mc-share:active{transform:scale(.98)}
 button.mc-share:disabled{opacity:.6;cursor:wait}
+button.mc-share small{font-family:var(--font-mono);font-size:.66rem;color:var(--text2);font-weight:500;letter-spacing:0}
 </style>
 </head>
 <body>
@@ -1046,7 +1050,6 @@ function openModal(pid, rank, pts, tempPlayer){
         <span class="mc-chip">🌏 ${esc(regionLabels[reg]||reg)}</span>
         ${p.badge?`<span class="modal-badge ${bclass}">◈ ${badge}</span>`:''}
         ${p.uid?`<button type="button" class="mc-chip mc-uid" onclick="copyUid(this,${jsArg(String(p.uid))})" title="คัดลอก UID">UID <b>${esc(p.uid)}</b><span class="mc-copy">📋</span></button>`:''}
-        <button type="button" class="mc-chip mc-share" onclick="shareCard(this)" title="แชร์การ์ดเป็นรูป">📤 แชร์</button>
       </div>
     </div>
     <div class="mc-stats">
@@ -1054,6 +1057,7 @@ function openModal(pid, rank, pts, tempPlayer){
       <div class="mc-stat"><div class="mc-stat-label">${statMidLabel}</div><div class="mc-stat-val">${statMid}</div></div>
       <div class="mc-stat"><div class="mc-stat-label">Modes</div><div class="mc-stat-val">${playerTierCount}<small>/${modes.length}</small></div></div>
     </div>
+    <div class="mc-share-row"><button type="button" class="mc-share" onclick="shareCard(this)" title="สร้างรูปการ์ดและแชร์">📤 แชร์การ์ดเป็นรูป <small>PNG</small></button></div>
     ${isUnranked?`<div style="text-align:center;color:var(--text3);font-size:.76rem;margin-top:8px">🚫 Unranked — ยังไม่มีข้อมูลแรงค์</div>`:''}
     ${isTemp?'':`<div class="modal-section" id="mcHistory" data-pid="${esc(pid)}"><div class="modal-section-title">Tier Progression</div><div class="mc-empty">กำลังโหลด...</div></div>`}
     ${hasTiers||isTemp?`<div class="modal-section">
