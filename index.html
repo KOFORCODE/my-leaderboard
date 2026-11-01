@@ -437,6 +437,10 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 @keyframes mcIn{from{opacity:0;transform:translateY(12px)}}
 @keyframes barIn{from{transform:scaleX(0)}}
 @media(prefers-reduced-motion:reduce){.mc-hero,.mc-stats,.mc-tiers,.mc-bar i{animation:none!important}}
+.mc-share{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;padding:11px;border-radius:12px;border:1px solid #f2b93e55;background:var(--accent-soft);color:var(--accent);font-family:var(--font-display);font-size:.9rem;font-weight:600;letter-spacing:.04em;cursor:pointer;transition:background .15s,transform .1s}
+.mc-share:hover{background:#f2b93e28}
+.mc-share:active{transform:scale(.98)}
+.mc-share:disabled{opacity:.6;cursor:wait}
 </style>
 </head>
 <body>
@@ -605,6 +609,7 @@ async function load(){
 
     renderTabs();
     render();
+    openFromUrl(); // ลิงก์ ?p=<uid> เปิดการ์ดผู้เล่นทันที
   }catch(err){
     console.error(err);
     document.getElementById('heroStats').innerHTML='';
@@ -1011,6 +1016,25 @@ function openModal(pid, rank, pts, tempPlayer){
     :(currentTier?`<span class="tier-mini ${TIER_CLASS[currentTier]||'t-F'}" style="height:26px;min-width:44px;font-size:.9rem">${currentTier}</span>`:'—');
   const statMidLabel=activeMode==='overall'?'Points':'Tier';
 
+  // เก็บข้อมูลการ์ดไว้ให้ shareCard() วาดเป็นรูป (ตรงกับที่แสดงบนจอ)
+  cardCtx={
+    temp:isTemp,
+    name:p.name||'',
+    uid:p.uid?String(p.uid):'',
+    region:regionLabels[reg]||reg,
+    badge:p.badge||'',
+    rankText:statRank,
+    isUnranked,
+    rc,
+    initial:(p.name?.[0]||'?').toUpperCase(),
+    avatarSrc:modalRankImg||p.avatar||'',
+    avatarIsIcon:!!modalRankImg, // รูป Rank เป็น PNG โปร่งใส ไม่ตัดวงกลม
+    posLabel:activeMode==='overall'?'OVERALL':(activeModeInfo?.name||'MODE'),
+    midLabel:statMidLabel,
+    midValue:activeMode==='overall'?`${totalPts} pts`:(currentTier||'—'),
+    tiers:modalModes.filter(m=>tiersByP[m.id]).map(m=>({name:m.name,tier:tiersByP[m.id]})),
+  };
+
   document.getElementById('modalInner').innerHTML=`
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="mc-hero">
@@ -1040,6 +1064,7 @@ function openModal(pid, rank, pts, tempPlayer){
       <div style="font-size:0.75rem;color:var(--text2);text-align:center;margin-bottom:8px">เทสเทียร์ กดตรงนี้</div>
       <a href="${document.getElementById('discordLink')?.href||'#'}" target="_blank" style="font-size:0.8rem;color:var(--accent);font-weight:600;text-align:center;text-decoration:none;display:block">[ COMBOO 500 ]</a>
     </div>`:''}
+    <button type="button" class="mc-share" onclick="shareCard(this)">📤 แชร์การ์ด</button>
   `;
 
   if(!isTemp) loadTierHistory(pid);
@@ -1111,6 +1136,194 @@ function renderTierSparkline(list){
 
 const RANK_COLORS={1:'#f5c842',2:'#c8d0de',3:'#e09060'};
 const TIER_HEX={'S':'#e8b84b','A+':'#ff6b6b','A':'#ff9355','A-':'#ffbe44','B+':'#c3ff5a','B':'#5fffaa','B-':'#00e8bb','C+':'#55cbff','C':'#55a3ff','C-':'#9d97ff','D+':'#cc77ff','D':'#ff77cc','D-':'#ff7788','F':'#777777'};
+
+// ---------- แชร์การ์ดผู้เล่น ----------
+// วาดการ์ดลง <canvas> เป็นรูป PNG (ไม่ใช้ไลบรารีภายนอก) แล้วแชร์ผ่าน Web Share API
+// ถ้าไม่รองรับ (เช่น เดสก์ท็อป) จะดาวน์โหลดรูป และคัดลอกลิงก์ ?p=<uid> ไปให้
+let cardCtx=null; // ข้อมูลการ์ดที่เปิดอยู่ (ตั้งค่าใน openModal)
+const CARD_W=800, CARD_H=1200;
+const SHARE_BASE_URL=location.origin+location.pathname;
+
+function loadCardImg(src){
+  return new Promise(resolve=>{
+    if(!src) return resolve(null);
+    const img=new Image();
+    img.crossOrigin='anonymous'; // ต้องขอแบบ CORS ไม่งั้นวาดลง canvas แล้วเอารูปออกไม่ได้
+    const timer=setTimeout(()=>resolve(null),6000);
+    img.onload=()=>{clearTimeout(timer);resolve(img)};
+    img.onerror=()=>{clearTimeout(timer);resolve(null)};
+    img.src=src;
+  });
+}
+
+function roundRectPath(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);
+  c.arcTo(x+w,y,x+w,y+h,r);
+  c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);
+  c.arcTo(x,y,x+w,y,r);
+  c.closePath();
+}
+
+async function drawCardCanvas(d){
+  const cv=document.createElement('canvas');
+  cv.width=CARD_W; cv.height=CARD_H;
+  const c=cv.getContext('2d');
+  const FONT_DISPLAY='"Oswald", "Leelawadee UI", Tahoma, sans-serif';
+  const FONT_MONO='"JetBrains Mono", Consolas, "Leelawadee UI", monospace';
+  try{ await Promise.all([document.fonts.load('600 40px Oswald'),document.fonts.load('600 20px "JetBrains Mono"')]); }catch(_){}
+
+  // พื้นหลัง + แสงสีตามอันดับ
+  const bg=c.createLinearGradient(0,0,0,CARD_H);
+  bg.addColorStop(0,'#171a24'); bg.addColorStop(1,'#12141c');
+  c.fillStyle=bg; c.fillRect(0,0,CARD_W,CARD_H);
+  const glow=c.createRadialGradient(CARD_W/2,0,0,CARD_W/2,0,620);
+  glow.addColorStop(0,d.rc+'66'); glow.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=glow; c.fillRect(0,0,CARD_W,CARD_H);
+  const line=c.createLinearGradient(100,0,CARD_W-100,0);
+  line.addColorStop(0,'rgba(0,0,0,0)'); line.addColorStop(0.5,d.rc); line.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=line; c.fillRect(0,0,CARD_W,5);
+
+  // รูป/อวาตาร์
+  const AV_X=CARD_W/2, AV_Y=270, AV_R=125;
+  const img=await loadCardImg(d.avatarSrc);
+  if(d.avatarIsIcon){
+    if(img){ const s=260; c.drawImage(img,AV_X-s/2,AV_Y-s/2,s,s); }
+  }else{
+    c.save();
+    c.beginPath(); c.arc(AV_X,AV_Y,AV_R,0,Math.PI*2); c.fillStyle='#1f2330'; c.fill();
+    c.clip();
+    if(img){
+      const k=Math.max(AV_R*2/img.width,AV_R*2/img.height);
+      const w=img.width*k, h=img.height*k;
+      c.drawImage(img,AV_X-w/2,AV_Y-h/2,w,h);
+    }else{
+      c.fillStyle='#8d93a8'; c.font=`600 ${AV_R}px ${FONT_DISPLAY}`;
+      c.textAlign='center'; c.textBaseline='middle';
+      c.fillText(d.initial,AV_X,AV_Y+8);
+    }
+    c.restore();
+    c.beginPath(); c.arc(AV_X,AV_Y,AV_R+4,0,Math.PI*2);
+    c.lineWidth=6; c.strokeStyle=d.rc; c.stroke();
+  }
+
+  // ชื่อ + ภูมิภาค/UID
+  c.textAlign='center'; c.textBaseline='alphabetic';
+  c.fillStyle='#ffe9ad';
+  c.font=`600 64px ${FONT_DISPLAY}`;
+  c.fillText(d.name,CARD_W/2,480,CARD_W-100);
+  c.fillStyle='#8d93a8';
+  c.font=`600 26px ${FONT_MONO}`;
+  const meta=[d.region, d.uid?`UID ${d.uid}`:''].filter(Boolean).join('  ·  ');
+  c.fillText(meta,CARD_W/2,530);
+
+  // badge
+  if(d.badge){
+    c.font=`700 24px ${FONT_MONO}`;
+    const txt=`◈ ${d.badge}`;
+    const tw=c.measureText(txt).width+40;
+    roundRectPath(c,CARD_W/2-tw/2,562,tw,46,23);
+    c.fillStyle='#f2b93e22'; c.fill();
+    c.strokeStyle='#f2b93e88'; c.lineWidth=2; c.stroke();
+    c.fillStyle='#f2b93e'; c.fillText(txt,CARD_W/2,594);
+  }
+
+  // กล่องสถิติ 3 ช่อง (Rank / Position / Points-or-Tier)
+  const boxY=650, boxH=150, gap=16, boxW=(CARD_W-100-gap*2)/3;
+  const stats=[
+    {label:d.posLabel, value:d.rankText, hl:true},
+    {label:'Modes', value:`${d.tiers.length}`, hl:false},
+    {label:d.midLabel, value:d.midValue, hl:false},
+  ];
+  stats.forEach((s,i)=>{
+    const x=50+i*(boxW+gap);
+    roundRectPath(c,x,boxY,boxW,boxH,16);
+    c.fillStyle='#1f2330'; c.fill();
+    c.strokeStyle=s.hl?d.rc:'rgba(255,255,255,0.09)'; c.lineWidth=2; c.stroke();
+    c.textAlign='center';
+    c.fillStyle='#8d93a8'; c.font=`600 20px ${FONT_MONO}`;
+    c.fillText(String(s.label).slice(0,12).toUpperCase(),x+boxW/2,boxY+48);
+    c.fillStyle=s.hl?d.rc:'#f4f5f9'; c.font=`600 52px ${FONT_DISPLAY}`;
+    c.fillText(String(s.value),x+boxW/2,boxY+116,boxW-20);
+  });
+
+  // Tiers แต่ละโหมด (2 คอลัมน์)
+  if(d.tiers.length){
+    c.textAlign='left';
+    c.fillStyle='#4d5268'; c.font=`600 20px ${FONT_MONO}`;
+    c.fillText('TIERS',50,875);
+    const cellW=(CARD_W-100-16)/2, cellH=58;
+    d.tiers.slice(0,12).forEach((t,i)=>{
+      const x=50+(i%2)*(cellW+16), y=900+Math.floor(i/2)*(cellH+12);
+      roundRectPath(c,x,y,cellW,cellH,12);
+      c.fillStyle='#1f2330'; c.fill();
+      c.fillStyle='#f4f5f9'; c.font=`600 24px ${FONT_DISPLAY}`;
+      c.fillText(String(t.name).slice(0,18),x+18,y+37,cellW-120);
+      const pillW=64;
+      roundRectPath(c,x+cellW-pillW-12,y+12,pillW,cellH-24,8);
+      c.fillStyle=TIER_HEX[t.tier]||'#777777'; c.fill();
+      c.fillStyle='#12141c'; c.font=`700 24px ${FONT_MONO}`; c.textAlign='center';
+      c.fillText(t.tier,x+cellW-pillW/2-12,y+37);
+    });
+  }
+
+  // ท้ายการ์ด
+  c.textAlign='center';
+  c.fillStyle='#f2b93e'; c.font=`600 26px ${FONT_DISPLAY}`;
+  c.fillText('COMBOO 500 · LEADERBOARD',CARD_W/2,CARD_H-70);
+  c.fillStyle='#4d5268'; c.font=`500 18px ${FONT_MONO}`;
+  c.fillText(d.uid&&!d.temp?`${SHARE_BASE_URL}?p=${d.uid}`:location.host,CARD_W/2,CARD_H-36);
+  return cv;
+}
+
+async function shareCard(btn){
+  if(!cardCtx) return;
+  const d=cardCtx;
+  if(btn) btn.disabled=true;
+  showSearchToast('กำลังสร้างรูปการ์ด...');
+  try{
+    const cv=await drawCardCanvas(d);
+    const blob=await new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error('toBlob')),'image/png'));
+    const fileName=`${(d.name||'player').replace(/[\\/:*?"<>|\s]+/g,'_')}-card.png`;
+    const file=new File([blob],fileName,{type:'image/png'});
+    const link=!d.temp&&d.uid?`${SHARE_BASE_URL}?p=${encodeURIComponent(d.uid)}`:'';
+
+    // มือถือ: เปิดหน้าต่างแชร์ของระบบ
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      try{
+        await navigator.share({files:[file],title:`${d.name} · COMBOO 500`,text:link||undefined});
+        return;
+      }catch(e){
+        if(e.name==='AbortError') return; // ผู้ใช้กดยกเลิกเอง
+      }
+    }
+
+    // เดสก์ท็อป/ไม่รองรับ: ดาวน์โหลดรูป + คัดลอกลิงก์
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),4000);
+    if(link&&navigator.clipboard){
+      try{ await navigator.clipboard.writeText(link); showSearchToast('ดาวน์โหลดรูปแล้ว และคัดลอกลิงก์การ์ดแล้ว'); return; }catch(_){}
+    }
+    showSearchToast('ดาวน์โหลดรูปการ์ดแล้ว');
+  }catch(e){
+    console.error(e);
+    showSearchToast('สร้างรูปการ์ดไม่สำเร็จ');
+  }finally{
+    if(btn) btn.disabled=false;
+  }
+}
+
+// เปิดการ์ดจากลิงก์ ?p=<uid> (เฉพาะผู้เล่นในฐานข้อมูล ไม่เรียก Free Fire API)
+function openFromUrl(){
+  const uid=new URLSearchParams(location.search).get('p');
+  if(!uid||!/^\d{1,20}$/.test(uid)) return;
+  const p=players.find(x=>String(x.uid)===uid);
+  if(p) openModal(p.id, ...computeRankAndPts(p));
+}
 
 function copyUid(btn,uid){
   const mark=btn.querySelector('.mc-copy');
