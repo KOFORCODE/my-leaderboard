@@ -437,13 +437,29 @@ button.mc-uid:hover{border-color:#f2b93e55;background:#f2b93e10}
 @keyframes mcIn{from{opacity:0;transform:translateY(12px)}}
 @keyframes barIn{from{transform:scaleX(0)}}
 @media(prefers-reduced-motion:reduce){.mc-hero,.mc-stats,.mc-tiers,.mc-bar i{animation:none!important}}
-/* แถวแชร์การ์ด: แยกจากชิปข้อมูลและปุ่มเทสเทียร์ท้ายการ์ด */
-.mc-share-row{margin:14px 0 2px;padding-top:12px;border-top:1px dashed var(--border2)}
-button.mc-share{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid #f2b93e66;background:linear-gradient(135deg,#f2b93e26,#f2b93e0d);color:var(--accent);font-family:var(--font-display);font-size:.88rem;font-weight:600;letter-spacing:.05em;cursor:pointer;transition:background .15s,transform .1s,opacity .15s}
-button.mc-share:hover{background:linear-gradient(135deg,#f2b93e38,#f2b93e15)}
-button.mc-share:active{transform:scale(.98)}
+/* ปุ่มแชร์การ์ด: ปุ่มเล็กมีข้อความ มุมซ้ายบน (ตรงข้ามปุ่มปิด) */
+button.mc-share{position:absolute;top:10px;left:10px;z-index:2;height:28px;padding:0 10px;border-radius:14px;border:1px solid #f2b93e66;background:#f2b93e1f;color:var(--accent);font-family:var(--font-display);font-size:.72rem;font-weight:600;letter-spacing:.03em;line-height:1;display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer;transition:background .15s,transform .1s,opacity .15s}
+button.mc-share:hover{background:#f2b93e38}
+button.mc-share:active{transform:scale(.92)}
 button.mc-share:disabled{opacity:.6;cursor:wait}
-button.mc-share small{font-family:var(--font-mono);font-size:.66rem;color:var(--text2);font-weight:500;letter-spacing:0}
+
+/* การ์ดกะทัดรัด: ลดขนาดให้ไม่กินทั้งจอ */
+.modal-card{max-width:340px;max-height:80vh}
+.modal-inner{padding:2.2rem 1rem .9rem}
+.mc-av-wrap .modal-avatar{width:68px;height:68px;font-size:1.6rem;margin-bottom:8px}
+.mc-hero .modal-name{font-size:1.2rem;margin-bottom:6px}
+.mc-meta{margin-bottom:10px;gap:5px}
+.modal-section{margin-top:10px}
+.modal-section-title{margin-bottom:5px}
+.mc-stats{gap:6px}
+.mc-stat{padding:6px 4px 5px}
+.mc-stat-label{margin-bottom:2px}
+.mc-stat-val{font-size:1.1rem;min-height:24px}
+.mc-tiers{gap:4px}
+.mc-tier{padding:5px 9px;gap:9px}
+.mc-tier .mode-icon{width:26px;height:26px}
+.mc-tier .tier-mini{height:20px;min-width:36px;font-size:.7rem}
+.mc-tier-name{font-size:.74rem}
 </style>
 </head>
 <body>
@@ -1039,6 +1055,7 @@ function openModal(pid, rank, pts, tempPlayer){
   };
 
   document.getElementById('modalInner').innerHTML=`
+    <button type="button" class="mc-share" onclick="shareCard(this)" title="สร้างรูปการ์ดและแชร์">📤 แชร์การ์ด</button>
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="mc-hero">
       <div class="mc-av-wrap">
@@ -1057,7 +1074,6 @@ function openModal(pid, rank, pts, tempPlayer){
       <div class="mc-stat"><div class="mc-stat-label">${statMidLabel}</div><div class="mc-stat-val">${statMid}</div></div>
       <div class="mc-stat"><div class="mc-stat-label">Modes</div><div class="mc-stat-val">${playerTierCount}<small>/${modes.length}</small></div></div>
     </div>
-    <div class="mc-share-row"><button type="button" class="mc-share" onclick="shareCard(this)" title="สร้างรูปการ์ดและแชร์">📤 แชร์การ์ดเป็นรูป <small>PNG</small></button></div>
     ${isUnranked?`<div style="text-align:center;color:var(--text3);font-size:.76rem;margin-top:8px">🚫 Unranked — ยังไม่มีข้อมูลแรงค์</div>`:''}
     ${isTemp?'':`<div class="modal-section" id="mcHistory" data-pid="${esc(pid)}"><div class="modal-section-title">Tier Progression</div><div class="mc-empty">กำลังโหลด...</div></div>`}
     ${hasTiers||isTemp?`<div class="modal-section">
@@ -1261,9 +1277,14 @@ async function drawCardCanvas(d){
       const x=50+(i%2)*(cellW+16), y=900+Math.floor(i/2)*(cellH+12);
       roundRectPath(c,x,y,cellW,cellH,12);
       c.fillStyle='#1f2330'; c.fill();
-      c.fillStyle='#f4f5f9'; c.font=`600 24px ${FONT_DISPLAY}`;
-      c.fillText(String(t.name).slice(0,18),x+18,y+37,cellW-120);
       const pillW=64;
+      c.fillStyle='#f4f5f9';
+      // ย่อฟอนต์จนชื่อโหมดพอดีช่อง (fillText maxWidth ไม่ย่อสระ/วรรณยุกต์ไทย เลยล้นกรอบ)
+      const nameMaxW=cellW-18-pillW-24;
+      let fs=24;
+      do { c.font=`600 ${fs}px ${FONT_DISPLAY}`; } while(c.measureText(String(t.name)).width>nameMaxW && --fs>12);
+      c.textAlign='left';
+      c.fillText(String(t.name),x+18,y+37);
       roundRectPath(c,x+cellW-pillW-12,y+12,pillW,cellH-24,8);
       c.fillStyle=TIER_HEX[t.tier]||'#777777'; c.fill();
       c.fillStyle='#12141c'; c.font=`700 24px ${FONT_MONO}`; c.textAlign='center';
