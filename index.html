@@ -8,21 +8,19 @@
 <meta property="og:description" content="🏆 Free Fire Tier List Ranking — ดูอันดับแนวตั้งของผู้เล่น Comboo 500">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://my-leaderboard-five.vercel.app">
-<meta property="og:image" content="https://postimg.cc/kBQgKNpm">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image" content="https://i.postimg.cc/pX75NqQp/333407178686439927.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Comboo 500 — Tier List">
 <meta name="twitter:description" content="🏆 Free Fire Tier List Ranking — ดูอันดับแนวตั้งของผู้เล่น Comboo 500">
-<meta name="twitter:image" content="https://postimg.cc/kBQgKNpm">
+<meta name="twitter:image" content="https://i.postimg.cc/pX75NqQp/333407178686439927.jpg">
 <meta name="theme-color" content="#e8b84b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/pX75NqQp/333407178686439927.jpg">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
-input,textarea,[contenteditable]{-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;user-select:text}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.tab-btn,.nav-link,.to-top,.modal-close,.pod{-webkit-user-select:none;user-select:none}
 :root{
   --bg0:#08090d;--bg1:#12141c;--bg2:#171a24;--bg3:#1f2330;
   --text1:#f4f5f9;--text2:#8d93a8;--text3:#4d5268;
@@ -207,7 +205,8 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   main,.hero{padding-left:1rem;padding-right:1rem}
   .hero{flex-wrap:wrap}
   .nav-center{display:flex;gap:6px}
-  .nav-link{display:none}
+  .nav-txt{display:none}
+  .nav-link{padding:6px 8px;font-size:1rem}
   #discordLink{display:block;padding:6px 10px;font-size:0.7rem}
   .search-wrap input{width:150px}
   .server-info{display:none!important}
@@ -470,9 +469,9 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
     <div class="logo-text"><span>Comboo</span> 500</div>
   </div>
   <div class="nav-center">
-    <a class="nav-link" href="#" id="rankingsLink">🏆 Rankings</a>
-    <a class="nav-link" href="#" target="_blank" id="discordLink">💬 Discord</a>
-    <a class="nav-link" href="#" id="apiDocsLink">📄 API Docs</a>
+    <a class="nav-link" href="#" id="rankingsLink">🏆<span class="nav-txt"> Rankings</span></a>
+    <a class="nav-link" href="#" target="_blank" rel="noopener" id="discordLink">💬 Discord</a>
+    <a class="nav-link" href="#" id="apiDocsLink">📄<span class="nav-txt"> API Docs</span></a>
   </div>
   <div class="nav-right">
     <div class="search-wrap">
@@ -788,6 +787,7 @@ window.addEventListener('scroll',()=>{
 
 function render(){
   updateBanner();
+  document.getElementById('heroStats').style.display='flex'; // .hero ซ่อนไว้ใน CSS ต้องเปิดตอนมีข้อมูล
   // build per-player tier map: {player_id: {mode_id: tier_type}}
   const tiersByPlayer={};
   tiers.forEach(t=>{
