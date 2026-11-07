@@ -32,19 +32,16 @@
 }
 html{scroll-behavior:smooth}
 body{
-  background:
-    radial-gradient(1100px 520px at 18% -8%, #f2b93e14, transparent 60%),
-    radial-gradient(900px 460px at 100% 0%, #6c63ff10, transparent 55%),
-    var(--bg0);
+  background:var(--bg0);
   color:var(--text1);font-family:var(--font-body);min-height:100vh;
   letter-spacing:.01em;
 }
 
 /* NAV */
-nav{background:#12141ce6;backdrop-filter:blur(14px) saturate(140%);-webkit-backdrop-filter:blur(14px) saturate(140%);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:50}
+nav{background:var(--bg1);border-bottom:1px solid var(--border);height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;position:sticky;top:0;z-index:50}
 .logo{display:flex;align-items:center;gap:10px}
 .logo-text{font-family:var(--font-display);font-size:1.32rem;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:var(--text1)}
-.logo-text span{background:linear-gradient(135deg,#ffd875,var(--accent) 55%,var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px #f2b93e33)}
+.logo-text span{color:var(--accent)}
 .nav-center{display:flex;align-items:center;gap:4px}
 .nav-link{color:var(--text3);font-size:.78rem;font-weight:600;letter-spacing:.03em;padding:8px 14px;border-radius:8px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;text-decoration:none}
 .nav-link:hover{color:var(--text1);background:#ffffff09}
@@ -63,8 +60,9 @@ nav{background:#12141ce6;backdrop-filter:blur(14px) saturate(140%);-webkit-backd
 .tabs-bar::-webkit-scrollbar{display:none}
 .tab-btn{display:flex;align-items:center;gap:7px;padding:0 16px;height:38px;border:1px solid transparent;border-radius:10px;background:none;color:var(--text3);font-family:var(--font-display);font-size:.8rem;font-weight:500;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .2s;white-space:nowrap;position:relative}
 .tab-btn:hover{color:var(--text1);background:#ffffff08;border-color:var(--border2)}
-.tab-btn.active{color:#1a1305;background:linear-gradient(135deg,#ffd875,var(--accent) 70%);border-color:transparent;box-shadow:0 4px 16px #f2b93e3d,0 0 0 1px #f2b93e40 inset}
+.tab-btn.active{color:#1a1305;background:var(--accent);border-color:transparent}
 .tab-icon{font-size:1rem;display:flex;align-items:center}
+.tab-icon:empty{display:none}
 .tab-icon img{width:20px;height:20px;object-fit:contain;border-radius:3px}
 
 /* SERVER BADGE */
@@ -83,39 +81,39 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 .t-row{display:grid;grid-template-columns:64px minmax(0,1fr) 1fr;padding:0 1.1rem;align-items:center;border-bottom:1px solid var(--border);transition:background .15s;min-height:76px;gap:8px}
 .t-row:last-child{border-bottom:none}
 .t-row:hover{background:#ffffff04}
-.t-row.r1{background:linear-gradient(90deg,#f5c84216,#e8b84b06);border-left:3px solid #f5c842;box-shadow:inset 0 0 0 1px #f5c84230,0 0 34px #f5c84212}
+.t-row.r1{background:linear-gradient(90deg,#f5c84216,#e8b84b06);border-left:3px solid #f5c842;}
 .t-row.r1 .player-name{color:#ffdd85}
 .t-row.r1 .reg{background:#f5c84222;color:#f5c842;border-color:#f5c84250}
 .t-row.r1 .player-badge{background:#f5c84220;color:#f5d060;border-color:#f5c84250}
 .t-row.r1 .badge-pts{color:#e0b23c}
-.t-row.r1 .mode-icon{border-color:#f5c84266!important;box-shadow:0 0 8px #f5c84244}
-.t-row.r1 .tier-mini{background:#f5c84222!important;color:#f5d060!important;border-color:#f5c84266!important;box-shadow:0 0 6px #f5c84244}
-.t-row.r1 .avatar{border:2px solid #f5c84255;box-shadow:0 0 12px #f5c84240}
-.t-row.r2{background:linear-gradient(90deg,#c8d0de14,#a0a8b806);border-left:3px solid #c8d0de;box-shadow:inset 0 0 0 1px #c8d0de2c,0 0 30px #c8d0de0e}
+.t-row.r1 .mode-icon{border-color:#f5c84266!important;box-shadow:none}
+.t-row.r1 .tier-mini{background:#f5c84222!important;color:#f5d060!important;border-color:#f5c84266!important;box-shadow:none}
+.t-row.r1 .avatar{border:2px solid #f5c84255;box-shadow:none}
+.t-row.r2{background:linear-gradient(90deg,#c8d0de14,#a0a8b806);border-left:3px solid #c8d0de;}
 .t-row.r2 .player-name{color:#e2e7f2}
 .t-row.r2 .reg{background:#c8d0de22;color:#d4dbe8;border-color:#c8d0de50}
 .t-row.r2 .player-badge{background:#c8d0de20;color:#d4dbe8;border-color:#c8d0de50}
 .t-row.r2 .badge-pts{color:#a5aec4}
-.t-row.r2 .mode-icon{border-color:#c8d0de66!important;box-shadow:0 0 8px #c8d0de44}
-.t-row.r2 .tier-mini{background:#c8d0de22!important;color:#d4dbe8!important;border-color:#c8d0de66!important;box-shadow:0 0 6px #c8d0de44}
-.t-row.r2 .avatar{border:2px solid #c8d0de55;box-shadow:0 0 10px #c8d0de33}
-.t-row.r3{background:linear-gradient(90deg,#e0906014,#c87a3a06);border-left:3px solid #e09060;box-shadow:inset 0 0 0 1px #e0906030,0 0 30px #e090600e}
+.t-row.r2 .mode-icon{border-color:#c8d0de66!important;box-shadow:none}
+.t-row.r2 .tier-mini{background:#c8d0de22!important;color:#d4dbe8!important;border-color:#c8d0de66!important;box-shadow:none}
+.t-row.r2 .avatar{border:2px solid #c8d0de55;box-shadow:none}
+.t-row.r3{background:linear-gradient(90deg,#e0906014,#c87a3a06);border-left:3px solid #e09060;}
 .t-row.r3 .player-name{color:#f0ae82}
 .t-row.r3 .reg{background:#e0906022;color:#e09060;border-color:#e0906050}
 .t-row.r3 .player-badge{background:#e0906020;color:#e8a070;border-color:#e0906050}
 .t-row.r3 .badge-pts{color:#c17a48}
-.t-row.r3 .mode-icon{border-color:#e0906066!important;box-shadow:0 0 8px #e0906044}
-.t-row.r3 .tier-mini{background:#e0906022!important;color:#e8a070!important;border-color:#e0906066!important;box-shadow:0 0 6px #e0906044}
-.t-row.r3 .avatar{border:2px solid #e0906055;box-shadow:0 0 10px #e0906033}
+.t-row.r3 .mode-icon{border-color:#e0906066!important;box-shadow:none}
+.t-row.r3 .tier-mini{background:#e0906022!important;color:#e8a070!important;border-color:#e0906066!important;box-shadow:none}
+.t-row.r3 .avatar{border:2px solid #e0906055;box-shadow:none}
 .t-row{transition:background .15s,transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease;}
-.t-row:hover{background:#ffffff06;transform:translateY(-3px) scale(1.008);box-shadow:0 10px 30px #0000006a,0 2px 10px #00000045;border-radius:12px;z-index:3;position:relative;}
+.t-row:hover{background:#ffffff06;border-radius:12px;z-index:3;position:relative;}
 
 /* RANK */
 .rank-wrap{display:flex;align-items:center;gap:0;justify-content:flex-start}
 .rank-box{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.1rem;font-weight:600;background:var(--bg3)}
-.t-row.r1 .rank-box{background:linear-gradient(135deg,#ffe08a,#c8960c);color:#241a02;border:2px solid #f5c842;box-shadow:0 0 12px #f5c84266}
-.t-row.r2 .rank-box{background:linear-gradient(135deg,#eef2f9,#8d9bb5);color:#1a1e28;border:2px solid #c8d0de;box-shadow:0 0 12px #c8cfe066}
-.t-row.r3 .rank-box{background:linear-gradient(135deg,#f0a878,#a0522d);color:#241203;border:2px solid #e09060;box-shadow:0 0 12px #c87a3a66}
+.t-row.r1 .rank-box{background:linear-gradient(135deg,#ffe08a,#c8960c);color:#241a02;border:2px solid #f5c842;box-shadow:none}
+.t-row.r2 .rank-box{background:linear-gradient(135deg,#eef2f9,#8d9bb5);color:#1a1e28;border:2px solid #c8d0de;box-shadow:none}
+.t-row.r3 .rank-box{background:linear-gradient(135deg,#f0a878,#a0522d);color:#241203;border:2px solid #e09060;box-shadow:none}
 .rank-box.normal{color:var(--text3);font-size:1rem;background:transparent;border:1px solid var(--border2)}
 
 /* PLAYER LEFT */
@@ -175,13 +173,6 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 @keyframes dots{0%,100%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
 
 /* HERO STATS */
-.hero{display:none;padding:1.1rem 1.5rem .3rem;max-width:1280px;margin:0 auto;align-items:center;gap:12px}
-.stat-card{background:linear-gradient(160deg,var(--bg1),var(--bg2));border:1px solid var(--border);border-radius:12px;padding:.85rem 1.3rem;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px -12px #00000060}
-.stat-icon{font-size:1.15rem;width:36px;height:36px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.stat-info{}
-.stat-label{font-family:var(--font-display);font-size:.64rem;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;font-weight:500}
-.stat-val{font-family:var(--font-display);font-size:1.2rem;font-weight:600;color:var(--text1);line-height:1.15;letter-spacing:.01em}
-.stat-val small{font-family:var(--font-body);font-size:.68rem;color:var(--text3);font-weight:500;margin-left:3px}
 
 .mobile-tiers{display:none}
 @media(max-width:768px){
@@ -202,11 +193,9 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   .tab-icon img{width:26px;height:26px}
   .tab-icon{font-size:1.3rem}
   nav{padding:0 1rem}
-  main,.hero{padding-left:1rem;padding-right:1rem}
-  .hero{flex-wrap:wrap}
+  main{padding-left:1rem;padding-right:1rem}
   .nav-center{display:flex;gap:6px}
-  .nav-txt{display:none}
-  .nav-link{padding:6px 8px;font-size:1rem}
+  .nav-link{padding:6px 8px;font-size:.7rem}
   #discordLink{display:block;padding:6px 10px;font-size:0.7rem}
   .search-wrap input{width:150px}
   .server-info{display:none!important}
@@ -216,7 +205,7 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 .ripple-host{position:relative;overflow:hidden}
 @keyframes ripple-expand{to{transform:scale(4);opacity:0}}
 .ripple-circle{
-  position:absolute;border-radius:50%;
+  display:none;position:absolute;border-radius:50%;
   background:radial-gradient(circle,#f2b93e4a 0%,#f2b93e00 70%);
   transform:scale(0);animation:ripple-expand .55s ease-out forwards;
   pointer-events:none;
@@ -237,7 +226,7 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 .modal-avatar.locked img{object-fit:contain;border-radius:0}
 .modal-avatar.lowpts img{transform:scale(1.5)}
 .modal-avatar.ptsup img{transform:scale(1.3)}
-.modal-name{font-family:var(--font-display);font-size:1.4rem;font-weight:600;letter-spacing:.01em;background:linear-gradient(135deg,#ffe9ad,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
+.modal-name{font-family:var(--font-display);font-size:1.4rem;font-weight:600;letter-spacing:.01em;color:var(--text1);margin-bottom:6px}
 .modal-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 15px;border-radius:20px;font-family:var(--font-mono);font-size:.78rem;font-weight:700;margin-bottom:9px}
 .modal-region{color:var(--text3);font-size:.8rem;margin-bottom:18px;font-weight:500}
 .modal-section{text-align:left;margin-top:16px}
@@ -250,7 +239,7 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 /* BANNER */
 .banner{display:none;max-width:1280px;margin:0 auto;padding:1.6rem 1.5rem .4rem;text-align:center}
 .banner-title{font-family:var(--font-display);font-size:2rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;line-height:1.15}
-.banner-title span{background:linear-gradient(120deg,#ffd875,var(--accent) 45%,#ffe9ad 60%,var(--accent2));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:titleShift 6s linear infinite}
+.banner-title span{color:var(--accent)}
 @keyframes titleShift{to{background-position:200% center}}
 .banner-sub{color:var(--text2);font-size:.86rem;margin-top:6px}
 .banner-stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:1rem}
@@ -260,19 +249,18 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 /* PODIUM */
 .podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:12px;align-items:end;max-width:760px;margin:0 auto 1.4rem}
 .pod{position:relative;background:linear-gradient(180deg,var(--bg2),var(--bg1));border:1px solid var(--border2);border-radius:16px;padding:1.5rem .6rem 1rem;text-align:center;cursor:pointer;min-width:0;transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;animation:podIn .6s cubic-bezier(.22,1,.36,1) backwards}
-.pod:hover{transform:translateY(-6px)}
-.pod.p1{padding-top:2rem;padding-bottom:1.3rem;background:linear-gradient(180deg,#f5c84220,var(--bg1) 72%);border-color:#f5c84299;box-shadow:inset 0 0 0 1px #f5c84228,0 12px 46px #f5c84242,0 0 90px #f5c8421a;animation-delay:.1s}
-.pod.p2{background:linear-gradient(180deg,#c8d0de1a,var(--bg1) 72%);border-color:#c8d0de77;box-shadow:inset 0 0 0 1px #c8d0de20,0 12px 38px #c8d0de2e,0 0 70px #c8d0de12;animation-delay:.2s}
-.pod.p3{background:linear-gradient(180deg,#e090601a,var(--bg1) 72%);border-color:#e0906077;box-shadow:inset 0 0 0 1px #e0906022,0 12px 38px #e0906030,0 0 70px #e0906014;animation-delay:.3s}
-.pod.p1:hover{box-shadow:inset 0 0 0 1px #f5c84240,0 16px 56px #f5c84260,0 0 100px #f5c84226}
-.pod.p2:hover{box-shadow:inset 0 0 0 1px #c8d0de30,0 16px 48px #c8d0de48,0 0 80px #c8d0de1a}
-.pod.p3:hover{box-shadow:inset 0 0 0 1px #e0906038,0 16px 48px #e0906048,0 0 80px #e090601c}
-.pod.p1 .pod-av:not(.locked){border:2px solid #f5c84266;box-shadow:0 0 20px #f5c84255}
-.pod.p2 .pod-av:not(.locked){border:2px solid #c8d0de66;box-shadow:0 0 18px #c8d0de44}
-.pod.p3 .pod-av:not(.locked){border:2px solid #e0906066;box-shadow:0 0 18px #e0906044}
-.pod.p1 .pod-av.locked img{filter:drop-shadow(0 0 12px #f5c84299)}
-.pod.p2 .pod-av.locked img{filter:drop-shadow(0 0 12px #c8d0de88)}
-.pod.p3 .pod-av.locked img{filter:drop-shadow(0 0 12px #e0906088)}
+.pod.p1{padding-top:2rem;padding-bottom:1.3rem;background:linear-gradient(180deg,#f5c84220,var(--bg1) 72%);border-color:#f5c84299;;animation-delay:.1s}
+.pod.p2{background:linear-gradient(180deg,#c8d0de1a,var(--bg1) 72%);border-color:#c8d0de77;;animation-delay:.2s}
+.pod.p3{background:linear-gradient(180deg,#e090601a,var(--bg1) 72%);border-color:#e0906077;;animation-delay:.3s}
+.pod.p1:hover{}
+.pod.p2:hover{}
+.pod.p3:hover{}
+.pod.p1 .pod-av:not(.locked){border:2px solid #f5c84266;box-shadow:none}
+.pod.p2 .pod-av:not(.locked){border:2px solid #c8d0de66;box-shadow:none}
+.pod.p3 .pod-av:not(.locked){border:2px solid #e0906066;box-shadow:none}
+.pod.p1 .pod-av.locked img{}
+.pod.p2 .pod-av.locked img{}
+.pod.p3 .pod-av.locked img{}
 .pod.p1 .pod-pts{color:#e0b23c}
 .pod.p2 .pod-pts{color:#a5aec4}
 .pod.p3 .pod-pts{color:#c17a48}
@@ -281,7 +269,7 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 .pod.p1 .pod-rank{background:linear-gradient(135deg,#ffe08a,#c8960c);color:#241a02}
 .pod.p2 .pod-rank{background:linear-gradient(135deg,#eef2f9,#8d9bb5);color:#1a1e28}
 .pod.p3 .pod-rank{background:linear-gradient(135deg,#f0a878,#a0522d);color:#241203}
-.pod-crown{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:1.6rem;filter:drop-shadow(0 0 10px #f5c84299);animation:crownFloat 2.6s ease-in-out infinite}
+.pod-crown{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:1.6rem;;}
 @keyframes crownFloat{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-4px)}}
 .pod-av{width:76px;height:76px;margin:0 auto 10px;border-radius:14px;overflow:hidden;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.9rem;font-weight:600;color:var(--text3)}
 .pod.p1 .pod-av{width:96px;height:96px}
@@ -299,7 +287,7 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 .t-row{animation:rowIn .45s ease backwards;animation-delay:calc(var(--i,0)*35ms)}
 @keyframes rowIn{from{opacity:0;transform:translateY(14px)}}
 .t-row.r1{position:relative;overflow:hidden}
-.t-row.r1::before{content:'';position:absolute;top:0;bottom:0;left:-40%;width:28%;background:linear-gradient(100deg,transparent,#ffe08a26,transparent);transform:skewX(-20deg);animation:shine 5s ease-in-out infinite;pointer-events:none}
+.t-row.r1::before{content:'';position:absolute;top:0;bottom:0;left:-40%;width:28%;background:linear-gradient(100deg,transparent,#ffe08a26,transparent);transform:skewX(-20deg);display:none}
 @keyframes shine{0%,55%{left:-40%}100%{left:130%}}
 
 /* BACK TO TOP */
@@ -340,16 +328,16 @@ body::before{content:'';position:fixed;inset:-12%;z-index:-1;pointer-events:none
     radial-gradient(520px 380px at 15% 25%, #f2b93e12, transparent 70%),
     radial-gradient(560px 420px at 85% 70%, #6c63ff10, transparent 70%),
     radial-gradient(420px 320px at 60% 10%, #00d4aa0a, transparent 70%);
-  animation:aurora 26s ease-in-out infinite alternate;will-change:transform}
+  display:none}
 @keyframes aurora{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(3%,2%,0) scale(1.08)}}
 
 /* เส้นแสดงความคืบหน้าการเลื่อน */
 .scroll-progress{position:fixed;top:0;left:0;right:0;height:2px;z-index:70;pointer-events:none;
-  background:linear-gradient(90deg,var(--accent2),#ffd875,var(--accent));transform-origin:left;transform:scaleX(0);box-shadow:0 0 10px #f2b93e88}
+  background:linear-gradient(90deg,var(--accent2),#ffd875,var(--accent));transform-origin:left;transform:scaleX(0);box-shadow:none}
 
 /* hover ของ tier chip */
 .tier-mini,.mode-icon{transition:transform .18s ease,box-shadow .18s ease}
-.mode-tier-item:hover .tier-mini{transform:translateY(-1px);box-shadow:0 0 10px currentColor}
+.mode-tier-item:hover .tier-mini{transform:translateY(-1px);box-shadow:none}
 .mode-tier-item:hover .mode-icon{transform:scale(1.08)}
 
 .search-wrap input:focus{box-shadow:0 0 0 3px #f2b93e1a}
@@ -375,10 +363,10 @@ body::before{content:'';position:fixed;inset:-12%;z-index:-1;pointer-events:none
   box-shadow:0 6px 20px -12px #000000a0}
 .t-row:last-child{border-bottom:1px solid var(--border2)}
 .t-row::after{content:'';position:absolute;left:0;top:16%;bottom:16%;width:3px;border-radius:0 3px 3px 0;
-  background:linear-gradient(180deg,#ffd875,var(--accent2));box-shadow:0 0 10px #f2b93e88;opacity:0;transition:opacity .2s;pointer-events:none}
+  background:linear-gradient(180deg,#ffd875,var(--accent2));box-shadow:none;opacity:0;transition:opacity .2s;pointer-events:none}
 .t-row:hover{border-radius:14px;border-color:#f2b93e44;
   background:linear-gradient(180deg,#f2b93e12,#ffffff03 70%,transparent),var(--bg1);
-  box-shadow:0 14px 34px -14px #000000c8,0 0 32px #f2b93e14}
+  box-shadow:0 14px 34px -14px #000000c8}
 .t-row:hover::after{opacity:1}
 .rank-box.normal{background:linear-gradient(180deg,#f2b93e14,transparent);border:1px solid #f2b93e33;color:var(--accent);font-weight:600}
 @media(max-width:768px){
@@ -469,9 +457,9 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
     <div class="logo-text"><span>Comboo</span> 500</div>
   </div>
   <div class="nav-center">
-    <a class="nav-link" href="#" id="rankingsLink">🏆<span class="nav-txt"> Rankings</span></a>
-    <a class="nav-link" href="#" target="_blank" rel="noopener" id="discordLink">💬 Discord</a>
-    <a class="nav-link" href="#" id="apiDocsLink">📄<span class="nav-txt"> API Docs</span></a>
+    <a class="nav-link" href="#" id="rankingsLink">Rankings</a>
+    <a class="nav-link" href="#" target="_blank" rel="noopener" id="discordLink">Discord</a>
+    <a class="nav-link" href="#" id="apiDocsLink">API Docs</a>
   </div>
   <div class="nav-right">
     <div class="search-wrap">
@@ -490,16 +478,15 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 </div>
 
 <section class="banner" id="banner">
-  <div class="banner-title">🏆 <span>Free Fire Tier List</span></div>
+  <div class="banner-title"><span>Free Fire Tier List</span></div>
   <div class="banner-sub">กดที่ผู้เล่นเพื่อดูรายละเอียด · พิมพ์ชื่อหรือ UID แล้วกด Enter เพื่อค้นหา</div>
   <div class="banner-stats">
-    <div class="bstat">👥 ผู้เล่น <b id="bsPlayers">0</b></div>
-    <div class="bstat">🎮 Game Mode <b id="bsModes">0</b></div>
-    <div class="bstat">🏅 Tier ที่ให้แล้ว <b id="bsTiers">0</b></div>
+    <div class="bstat">ผู้เล่น <b id="bsPlayers">0</b></div>
+    <div class="bstat">Game Mode <b id="bsModes">0</b></div>
+    <div class="bstat">Tier ที่ให้แล้ว <b id="bsTiers">0</b></div>
   </div>
 </section>
 
-<div class="hero" id="heroStats"></div>
 
 <main>
   <div id="podium"></div>
@@ -580,7 +567,7 @@ async function apiRpc(fn, ms=8000){
 
 async function load(){
   // แสดง tab Overall ทันทีก่อน API ตอบ ให้กดได้เลย
-  document.getElementById('tabsBar').innerHTML=`<button class="tab-btn active" onclick="setMode('overall')"><span class="tab-icon">🏆</span>Overall</button>`;
+  document.getElementById('tabsBar').innerHTML=`<button class="tab-btn active" onclick="setMode('overall')">Overall</button>`;
   document.getElementById('serverInfo').style.display='flex';
 
   try{
@@ -630,7 +617,6 @@ async function load(){
     openFromUrl(); // ลิงก์ ?p=<uid> เปิดการ์ดผู้เล่นทันที
   }catch(err){
     console.error(err);
-    document.getElementById('heroStats').innerHTML='';
     const msg=err.message==='timeout'?'การเชื่อมต่อช้าเกินไป ลองรีเฟรชใหม่':'โหลดข้อมูลไม่สำเร็จ';
     document.getElementById('tableBody').innerHTML=`<div class="empty"><div class="empty-icon">⚠️</div><p>${msg}</p><p style="margin-top:12px"><button onclick="location.reload()" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 20px;font-weight:700;cursor:pointer;font-size:0.85rem">ลองใหม่</button></p></div>`;
   }
@@ -638,7 +624,7 @@ async function load(){
 
 function renderTabs(){
   const overallBtn=`<button class="tab-btn${activeMode==='overall'?' active':''}" onclick="setMode('overall')">
-    <span class="tab-icon">🏆</span>Overall
+    Overall
   </button>`;
   const modeBtns=modes.map(m=>{
     const modeName=esc(m.name);
@@ -787,7 +773,6 @@ window.addEventListener('scroll',()=>{
 
 function render(){
   updateBanner();
-  document.getElementById('heroStats').style.display='flex'; // .hero ซ่อนไว้ใน CSS ต้องเปิดตอนมีข้อมูล
   // build per-player tier map: {player_id: {mode_id: tier_type}}
   const tiersByPlayer={};
   tiers.forEach(t=>{
@@ -815,12 +800,6 @@ function render(){
     });
     // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก อันดับที่ 101 ขึ้นไปไม่แสดงในตารางและแท่น (ตัวเลขผู้เล่นใช้จำนวนจริง)
     list.splice(MAX_ROWS);
-
-    document.getElementById('heroStats').innerHTML=`
-      <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่นทั้งหมด</div><div class="stat-val">${players.length}<small>คน</small></div></div></div>
-      <div class="stat-card"><span class="stat-icon">🎮</span><div class="stat-info"><div class="stat-label">Mode ที่นับ</div><div class="stat-val">${overallModes.length}<small>mode</small></div></div></div>
-      <div class="stat-card"><span class="stat-icon">⭐</span><div class="stat-info"><div class="stat-label">คะแนนสูงสุด</div><div class="stat-val">${list.length?scoreMap[list[0].id]:0}<small>pts</small></div></div></div>
-    `;
 
     document.getElementById('tierHeader').textContent='TIERS';
     renderPodium(list,scoreMap);
@@ -851,20 +830,7 @@ function render(){
     // tier เท่ากัน: ใครได้ rank นี้ก่อน (id แถว player_tiers น้อยกว่า) อยู่บนกว่าเสมอ
     return (tierMap[a.id]?.id??0)-(tierMap[b.id]?.id??0);
   });
-  // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก (ตัวเลขผู้เล่นใช้จำนวนจริงก่อนตัด)
-  const total=list.length;
   list.splice(MAX_ROWS);
-
-  const counts={};
-  TIER_ORDER.forEach(t=>counts[t]=0);
-  modeTiers.forEach(t=>{if(counts[t.tier_type]!==undefined)counts[t.tier_type]++});
-  const topTier=TIER_ORDER.find(t=>counts[t]>0)||'-';
-
-  document.getElementById('heroStats').innerHTML=`
-    <div class="stat-card"><span class="stat-icon">👥</span><div class="stat-info"><div class="stat-label">ผู้เล่น</div><div class="stat-val">${total}<small>คน</small></div></div></div>
-    <div class="stat-card"><span class="stat-icon">🥇</span><div class="stat-info"><div class="stat-label">Tier สูงสุด</div><div class="stat-val">${topTier}</div></div></div>
-    <div class="stat-card"><span class="stat-icon">⭐</span><div class="stat-info"><div class="stat-label">S Tier</div><div class="stat-val">${counts['S']}<small>คน</small></div></div></div>
-  `;
 
   // For single mode: show only the selected mode. Overall still shows all counted modes.
   const selectedModes=modes.filter(m=>m.id===activeMode);
@@ -1384,7 +1350,7 @@ function spawnRipple(el, e){
 }
 
 function attachRipples(){
-  document.querySelectorAll('.t-row,.tab-btn,.stat-card,.nav-link').forEach(el=>{
+  document.querySelectorAll('.t-row,.tab-btn,.nav-link').forEach(el=>{
     if(el.dataset.ripple) return;
     el.dataset.ripple='1';
     el.classList.add('ripple-host');
