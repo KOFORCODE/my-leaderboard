@@ -1285,7 +1285,7 @@ async function shareCard(btn){
     // มือถือ: เปิดหน้าต่างแชร์ของระบบ
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       try{
-        await navigator.share({files:[file],title:`${d.name} · COMBOO 500`,text:link||undefined});
+        await navigator.share({files:[file],title:`${d.name} · COMBOO 500`});
         return;
       }catch(e){
         if(e.name==='AbortError') return; // ผู้ใช้กดยกเลิกเอง
