@@ -1019,6 +1019,9 @@ function openModal(pid, rank, pts, tempPlayer){
     midValue:activeMode==='overall'?`${totalPts} pts`:(currentTier||'—'),
     tiers:modalModes.filter(m=>tiersByP[m.id]).map(m=>({name:m.name,tier:tiersByP[m.id]})),
   };
+  // วาดรูปการ์ดล่วงหน้าตอนเปิดการ์ด: ถ้ารอตอนกดแชร์ iOS/Android จะหมดสิทธิ์ navigator.share (ต้องเรียกภายในการกดปุ่ม)
+  cardBlobPromise=drawCardCanvas(cardCtx).then(cv=>new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error('toBlob')),'image/png')));
+  cardBlobPromise.catch(()=>{}); // กัน unhandled rejection; ถ้าพังจะแจ้งตอนกดแชร์
 
   document.getElementById('modalInner').innerHTML=`
     <button type="button" class="mc-share" onclick="shareCard(this)" title="สร้างรูปการ์ดและแชร์">📤 แชร์การ์ด</button>
@@ -1125,6 +1128,7 @@ const TIER_HEX={'S':'#e8b84b','A+':'#ff6b6b','A':'#ff9355','A-':'#ffbe44','B+':'
 // ---------- แชร์การ์ดผู้เล่น ----------
 // วาดการ์ดลง <canvas> เป็นรูป PNG (ไม่ใช้ไลบรารีภายนอก) แล้วแชร์ผ่าน Web Share API
 // ถ้าไม่รองรับ (เช่น เดสก์ท็อป) จะดาวน์โหลดรูป และคัดลอกลิงก์ ?p=<uid> ไปให้
+let cardBlobPromise=null; // PNG ของการ์ดที่เปิดอยู่ (วาดไว้ล่วงหน้าใน openModal)
 let cardCtx=null; // ข้อมูลการ์ดที่เปิดอยู่ (ตั้งค่าใน openModal)
 const CARD_W=800, CARD_H=1200;
 const SHARE_BASE_URL=location.origin+location.pathname;
@@ -1273,8 +1277,7 @@ async function shareCard(btn){
   if(btn) btn.disabled=true;
   showSearchToast('กำลังสร้างรูปการ์ด...');
   try{
-    const cv=await drawCardCanvas(d);
-    const blob=await new Promise((res,rej)=>cv.toBlob(b=>b?res(b):rej(new Error('toBlob')),'image/png'));
+    const blob=await cardBlobPromise;
     const fileName=`${(d.name||'player').replace(/[\\/:*?"<>|\s]+/g,'_')}-card.png`;
     const file=new File([blob],fileName,{type:'image/png'});
     const link=!d.temp&&d.uid?`${SHARE_BASE_URL}?p=${encodeURIComponent(d.uid)}`:'';
