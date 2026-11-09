@@ -16,6 +16,7 @@ const ACCESS = {
     player_tiers: ['GET', 'POST', 'PATCH', 'DELETE'],
     site_settings: ['GET', 'PATCH'],
     event_signups: ['GET', 'DELETE'],
+    event_config: ['GET', 'PATCH'],
   },
   tester: {
     modes: ['GET'],
@@ -23,6 +24,7 @@ const ACCESS = {
     player_tiers: ['GET', 'POST', 'PATCH'],
     site_settings: ['GET'],
     event_signups: ['GET'],
+    event_config: ['GET'],
   },
 };
 
@@ -83,6 +85,14 @@ const FIELD_RULES = {
     discord_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
     rankings_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
     api_docs_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
+  },
+  event_config: {
+    title: (v) => (typeof v === 'string' && v.trim().length >= 1 && v.length <= 80 ? null : 'ชื่อ event ต้องยาว 1–80 ตัวอักษร'),
+    description: (v) => (typeof v === 'string' && v.length <= 300 ? null : 'คำอธิบายต้องไม่เกิน 300 ตัวอักษร'),
+    is_open: (v) => (typeof v === 'boolean' ? null : 'is_open ต้องเป็น true/false'),
+    min_tier: (v) => (TIERS.includes(v) ? null : 'Tier ไม่ถูกต้อง'),
+    mode_name: (v) => (v === null || (typeof v === 'string' && v.length <= 60) ? null : 'ชื่อโหมดยาวเกินไป'),
+    closes_at: (v) => (v === null || (typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date.parse(v))) ? null : 'วันปิดรับสมัครไม่ถูกต้อง'),
   },
 };
 
