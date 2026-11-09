@@ -82,7 +82,7 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
   if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
-    return res.status(500).json({ error: 'ยังไม่ได้ตั้งค่า SUPABASE_URL / SUPABASE_SECRET_KEY ใน Vercel' });
+    return res.status(500).json({ error: 'มึงลืมตั้งค่า key แหละมั้ง' });
   }
   res.setHeader('Cache-Control', 'no-store');
 
