@@ -137,6 +137,7 @@ body.readonly .edit-only{display:none!important}
     <button class="atab active" data-tab="players" onclick="switchTab('players', this)">👤 ผู้เล่น</button>
     <button class="atab" data-tab="modes" onclick="switchTab('modes', this)">🎮 Game Mode</button>
     <button class="atab" data-tab="settings" onclick="switchTab('settings', this)">⚙️ ตั้งค่าเว็บ</button>
+    <button class="atab" data-tab="event" onclick="switchTab('event', this)">🎟 Event</button>
   </div>
 
   <!-- PLAYERS SECTION -->
@@ -274,6 +275,35 @@ body.readonly .edit-only{display:none!important}
       <input type="text" id="s_apidocs" placeholder="เว้นว่างไว้ได้ถ้ายังไม่ใช้" style="margin-bottom:1.2rem">
 
       <button class="btn btn-primary edit-only" onclick="saveSiteSettings()">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <!-- EVENT SECTION -->
+  <div class="section" id="sec-event">
+    <div class="card">
+      <div class="card-title">🎟 ตั้งค่า Event สมัคร</div>
+      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.2rem">การเปลี่ยนแปลงมีผลทันทีกับหน้าสมัครบนเว็บ ไม่ต้อง deploy ใหม่</p>
+
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;cursor:pointer">
+        <input type="checkbox" id="e_open" style="width:auto"> เปิดรับสมัคร
+      </label>
+
+      <label>ชื่อ Event</label>
+      <input type="text" id="e_title" maxlength="80" style="margin-bottom:1rem">
+
+      <label>คำอธิบาย</label>
+      <textarea id="e_desc" maxlength="300" rows="3" style="margin-bottom:1rem;width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text1);font-family:inherit"></textarea>
+
+      <label>Tier ขั้นต่ำที่สมัครได้</label>
+      <select id="e_tier" style="margin-bottom:1rem"></select>
+
+      <label>โหมดที่ใช้ตัดสิน</label>
+      <select id="e_mode" style="margin-bottom:1rem"></select>
+
+      <label>วันปิดรับสมัคร (เว้นว่างได้ = ไม่กำหนด)</label>
+      <input type="datetime-local" id="e_closes" style="margin-bottom:1.2rem">
+
+      <button class="btn btn-primary edit-only" onclick="saveEventConfig()">💾 บันทึก</button>
     </div>
   </div>
 
@@ -528,6 +558,54 @@ async function init(){
   buildModeSelect();
   renderPlayerList();
   loadSiteSettings();
+  loadEventConfig();
+}
+
+// แปลงเวลา ISO เป็นรูปแบบช่อง datetime-local (เวลาท้องถิ่น)
+function toLocalInput(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d)) return '';
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function loadEventConfig(){
+  const tierSel = document.getElementById('e_tier');
+  const modeSel = document.getElementById('e_mode');
+  tierSel.innerHTML = TIERS.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  modeSel.innerHTML = '<option value="">ทุกโหมด</option>' + modes.map(m=>`<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('');
+  try{
+    const rows = await api('event_config?id=eq.1&select=*');
+    const c = rows?.[0] || {};
+    document.getElementById('e_open').checked = c.is_open !== false;
+    document.getElementById('e_title').value = c.title || '';
+    document.getElementById('e_desc').value = c.description || '';
+    tierSel.value = c.min_tier || 'D+';
+    modeSel.value = c.mode_name || '';
+    document.getElementById('e_closes').value = toLocalInput(c.closes_at);
+  }catch(e){
+    console.warn('[loadEventConfig] โหลดไม่สำเร็จ (อาจยังไม่ได้รัน sql/event_config.sql):', e.message);
+  }
+}
+
+async function saveEventConfig(){
+  const closesRaw = document.getElementById('e_closes').value;
+  const payload = {
+    is_open: document.getElementById('e_open').checked,
+    title: document.getElementById('e_title').value.trim(),
+    description: document.getElementById('e_desc').value.trim(),
+    min_tier: document.getElementById('e_tier').value,
+    mode_name: document.getElementById('e_mode').value || null,
+    closes_at: closesRaw ? new Date(closesRaw).toISOString() : null,
+  };
+  if(!payload.title){ toast('ต้องใส่ชื่อ Event', false); return; }
+  try{
+    await api('event_config?id=eq.1', 'PATCH', payload);
+    toast('บันทึกการตั้งค่า Event เรียบร้อย');
+  }catch(e){
+    toast('บันทึกไม่สำเร็จ: '+e.message, false);
+  }
 }
 
 async function loadSiteSettings(){
