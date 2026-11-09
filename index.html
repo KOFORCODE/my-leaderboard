@@ -186,6 +186,26 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   .sk-tiers{width:70px}
 }
 @media(prefers-reduced-motion:reduce){.skel{animation:none}}
+
+/* TICKER: แถบการเปลี่ยน Tier ล่าสุด เลื่อนวนซ้ำ */
+.ticker{overflow:hidden;margin:1rem 0 .2rem;padding:9px 0;border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);background:#ffffff04;-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.ticker[hidden]{display:none}
+.ticker-track{display:flex;width:max-content;animation:tickerMove 45s linear infinite}
+.ticker:hover .ticker-track{animation-play-state:paused}
+@keyframes tickerMove{to{transform:translateX(-50%)}}
+.tick-item{display:inline-flex;align-items:center;gap:8px;margin-right:28px;font-size:.78rem;color:var(--text2);white-space:nowrap}
+.tick-item b{color:var(--text1);font-weight:600}
+.tick-old{color:var(--text3);text-decoration:line-through}
+.tick-mode{font-size:.66rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+@media(prefers-reduced-motion:reduce){.ticker-track{animation:none}}
+
+/* ปุ่มสมัคร Event บนแบนเนอร์ */
+.ev-cta{margin-left:4px;padding:7px 16px;border-radius:999px;border:1px solid #f2b93e66;background:linear-gradient(135deg,#f2b93e,#c98a1f);color:#000;font-weight:700;font-size:.78rem;cursor:pointer;box-shadow:0 8px 24px -12px #f2b93e;transition:transform .15s,filter .15s}
+.ev-cta:hover{transform:translateY(-1px);filter:brightness(1.08)}
+
+/* การ์ดผู้เล่น: กระจกฝ้าและยกขึ้นตอน hover */
+.t-row{backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.t-row:hover{transform:translateY(-2px);box-shadow:0 14px 30px -16px #f2b93e55}
 @keyframes dots{0%,100%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
 
 /* HERO STATS */
@@ -504,7 +524,9 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
     <div class="bstat">ผู้เล่น <b id="bsPlayers">0</b></div>
     <div class="bstat">Game Mode <b id="bsModes">0</b></div>
     <div class="bstat">Tier ที่ให้แล้ว <b id="bsTiers">0</b></div>
+    <button type="button" class="ev-cta" onclick="openEvent(event)">🎟 สมัคร Event</button>
   </div>
+  <div class="ticker" id="ticker" hidden><div class="ticker-track" id="tickerTrack"></div></div>
 </section>
 
 
@@ -717,6 +739,7 @@ async function load(){
     }
     renderTabs();
     render();
+    loadTicker();
     openFromUrl(); // ลิงก์ ?p=<uid> เปิดการ์ดผู้เล่นทันที
   }catch(err){
     console.error(err);
@@ -1477,6 +1500,25 @@ render=function(...a){
 </script>
 
 <script>
+// ===== TICKER: การเปลี่ยน Tier ล่าสุด =====
+async function loadTicker(){
+  try{
+    const rows=await apiWithTimeout('tier_history?select=player_id,mode_id,old_tier,new_tier,changed_at&order=id.desc&limit=20');
+    const pName=Object.fromEntries(players.map(p=>[String(p.id),p.name]));
+    const mName=Object.fromEntries(modes.map(m=>[String(m.id),m.name]));
+    const items=(rows||[]).filter(r=>r.new_tier&&pName[String(r.player_id)]).map(r=>{
+      const from=r.old_tier?`<span class="tick-old">${esc(r.old_tier)}</span>→`:'';
+      return `<span class="tick-item"><b>${esc(pName[String(r.player_id)])}</b>${from}<span class="tier-mini ${TIER_CLASS[r.new_tier]||'t-F'}">${esc(r.new_tier)}</span><span class="tick-mode">${esc(mName[String(r.mode_id)]||'')}</span></span>`;
+    });
+    if(!items.length) return;
+    // ใส่ซ้ำสองชุดเพื่อให้วนลูปต่อเนื่อง (แอนิเมชันเลื่อนไปครึ่งหนึ่งของแถบ)
+    document.getElementById('tickerTrack').innerHTML=items.join('')+items.join('');
+    document.getElementById('ticker').hidden=false;
+  }catch{
+    // ยังไม่ได้รัน sql/tier_history.sql หรือโหลดไม่ได้ ไม่ต้องแสดงแถบ
+  }
+}
+
 // ===== ระบบสมัคร Event =====
 let eventPreview = null; // ข้อมูลผู้เล่นที่ตรวจแล้ว
 
