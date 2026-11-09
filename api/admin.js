@@ -15,12 +15,14 @@ const ACCESS = {
     players: ['GET', 'POST', 'PATCH', 'DELETE'],
     player_tiers: ['GET', 'POST', 'PATCH', 'DELETE'],
     site_settings: ['GET', 'PATCH'],
+    event_signups: ['GET', 'DELETE'],
   },
   tester: {
     modes: ['GET'],
     players: ['GET', 'POST', 'PATCH'],
     player_tiers: ['GET', 'POST', 'PATCH'],
     site_settings: ['GET'],
+    event_signups: ['GET'],
   },
 };
 
