@@ -192,12 +192,16 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   .tab-btn{flex-direction:column;justify-content:center;height:auto;min-width:72px;padding:9px 12px 10px;font-size:.66rem;gap:6px;border-radius:12px}
   .tab-icon img{width:26px;height:26px}
   .tab-icon{font-size:1.3rem}
-  nav{padding:0 1rem}
+  /* มือถือ: โลโก้+ช่องค้นหาอยู่แถวบน ลิงก์เมนูขึ้นแถวล่างเต็มความกว้าง ไม่ให้ทะลุขอบจอ */
+  nav{height:auto;flex-wrap:wrap;padding:.6rem 1rem;row-gap:.5rem}
+  .logo{order:1}
+  .nav-right{order:2;margin-left:auto;min-width:0}
+  .nav-center{order:3;width:100%;display:flex;justify-content:space-between;gap:2px;overflow-x:auto;scrollbar-width:none;box-sizing:border-box}
+  .nav-center::-webkit-scrollbar{display:none}
+  .nav-link{padding:6px 4px;font-size:.68rem;white-space:nowrap;flex:0 0 auto;min-width:0}
+  #discordLink{display:block;padding:6px 4px;font-size:0.68rem}
+  .search-wrap input{width:120px;box-sizing:border-box;padding-right:34px}
   main{padding-left:1rem;padding-right:1rem}
-  .nav-center{display:flex;gap:6px}
-  .nav-link{padding:6px 8px;font-size:.7rem}
-  #discordLink{display:block;padding:6px 10px;font-size:0.7rem}
-  .search-wrap input{width:150px}
   .server-info{display:none!important}
 }
 
@@ -459,7 +463,6 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
   <div class="nav-center">
     <a class="nav-link" href="#" id="rankingsLink">Rankings</a>
     <a class="nav-link" href="#" target="_blank" rel="noopener" id="discordLink">Discord</a>
-    <a class="nav-link" href="#" id="apiDocsLink">API Docs</a>
     <a class="nav-link" href="#" id="eventLink" onclick="openEvent(event)">Event</a>
   </div>
   <div class="nav-right">
@@ -624,11 +627,6 @@ async function load(){
       const rankingsLink = document.getElementById('rankingsLink');
       if(rankingsLink) rankingsLink.href = settings.rankings_url;
     }
-    if(okUrl(settings?.api_docs_url)){
-      const apiDocsLink = document.getElementById('apiDocsLink');
-      if(apiDocsLink) apiDocsLink.href = settings.api_docs_url;
-    }
-
     renderTabs();
     render();
     openFromUrl(); // ลิงก์ ?p=<uid> เปิดการ์ดผู้เล่นทันที
