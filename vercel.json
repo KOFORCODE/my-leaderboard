@@ -1,12 +1,22 @@
 {
   "rewrites": [
-    { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/event", "destination": "/event.html" },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
     {
       "source": "/",
       "has": [
-        { "type": "query", "key": "p", "value": "(?<p>\\d{1,20})" },
-        { "type": "header", "key": "user-agent", "value": "(?i).*(discordbot|facebookexternalhit|twitterbot|telegrambot|slackbot|linkedinbot|whatsapp|instagram|line-|skypeuripreview|embedly|pinterest).*" }
+        {
+          "type": "query",
+          "key": "p",
+          "value": "(?<p>\\d{1,20})"
+        },
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(discordbot|facebookexternalhit|twitterbot|telegrambot|slackbot|linkedinbot|whatsapp|instagram|line-|skypeuripreview|embedly|pinterest).*"
+        }
       ],
       "destination": "/api/share?p=:p"
     }
