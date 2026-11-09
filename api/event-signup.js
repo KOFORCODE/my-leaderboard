@@ -3,35 +3,57 @@
 // GET                 → สถานะ event (ชื่อ, เงื่อนไข, จำนวนผู้สมัคร)
 // GET ?uid=<uid>      → ตรวจ UID: ชื่อ, Tier สูงสุด, สมัครได้หรือไม่
 // POST {uid}          → สมัคร (ตรวจสิทธิ์ซ้ำฝั่ง server เสมอ)
-// ใช้ SUPABASE_SECRET_KEY (เขียนตาราง event_signups ได้โดยไม่ผ่าน RLS)
+// ค่า event (ชื่อ, เปิด/ปิด, Tier ขั้นต่ำ ฯลฯ) อ่านจากตาราง event_config ซึ่งแก้ได้ที่หน้า admin
+// ใช้ SUPABASE_SECRET_KEY (อ่าน/เขียนตารางได้โดยไม่ผ่าน RLS)
 
 const TIERS = ['S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+const EVENT_KEY = 'main'; 
 
-// ===== ตั้งค่า Event ตรงนี้ =====
-const EVENT_KEY = 'main';                 // ชื่อ event (ต้องตรงกับ event_key ในฐานข้อมูล)
-const EVENT_TITLE = 'Comboo 500 Event';   // ชื่อที่แสดงบนหน้าเว็บ
-const EVENT_DESC = 'สมัครเข้าร่วม Event ของ Comboo 500 เฉพาะผู้เล่นที่มีอันดับในเว็บ';
-const SIGNUP_OPEN = true;                 // false = ปิดรับสมัคร
-const MIN_TIER = 'D+';                    // Tier ขั้นต่ำที่สมัครได้
-const MODE_NAME = '';                     // ชื่อโหมดที่ใช้ตัดสิน ว่างไว้ = นับทุกโหมด
-// =================================
 
-const MIN_INDEX = TIERS.indexOf(MIN_TIER);
+const DEFAULT_CONFIG = {
+  title: 'Comboo 500 Event',
+  description: 'สมัครเข้าร่วม Event ของ Comboo 500 เฉพาะผู้เล่นที่มีอันดับในเว็บ',
+  is_open: true,
+  min_tier: 'D+',
+  mode_name: null,
+  closes_at: null,
+};
+
 const lastRequestByIp = new Map();
 const RATE_LIMIT_MS = 2000;
 
-// ตรวจผู้เล่นจาก UID: คืนข้อมูลผู้เล่น, Tier สูงสุด (ในขอบเขตโหมดที่ตั้งไว้) และสถานะสมัคร
-async function inspectUid(sb, uid) {
+// อ่านค่า event จากฐานข้อมูล แล้วแปลงเป็นรูปแบบที่ใช้จริง
+async function getConfig(sb) {
+  let row = null;
+  try {
+    const r = await sb('event_config?id=eq.1&select=*&limit=1');
+    if (r.ok) row = (await r.json())[0] || null;
+  } catch {
+    row = null;
+  }
+  const c = { ...DEFAULT_CONFIG, ...(row || {}) };
+  const pastClose = c.closes_at && Date.now() >= Date.parse(c.closes_at);
+  return {
+    title: c.title,
+    description: c.description,
+    minTier: TIERS.includes(c.min_tier) ? c.min_tier : DEFAULT_CONFIG.min_tier,
+    modeName: c.mode_name || null,
+    open: Boolean(c.is_open) && !pastClose,
+  };
+}
+
+// ตรวจผู้เล่นจาก UID: ข้อมูลผู้เล่น, Tier สูงสุด (ในขอบเขตโหมดที่ตั้งไว้) และสถานะสมัคร
+async function inspectUid(sb, uid, cfg) {
   const pr = await sb(`players?uid=eq.${encodeURIComponent(uid)}&select=id,name,uid&limit=1`);
   if (!pr.ok) return { error: 'เชื่อมต่อฐานข้อมูลไม่ได้', status: 502 };
   const player = (await pr.json())[0];
   if (!player) return { error: 'ไม่พบ UID นี้ในเว็บไซต์ ตรวจ UID อีกครั้ง', status: 404 };
 
   let modeFilter = '';
-  if (MODE_NAME) {
-    const mr = await sb(`modes?name=eq.${encodeURIComponent(MODE_NAME)}&select=id&limit=1`);
+  if (cfg.modeName) {
+    const mr = await sb(`modes?name=eq.${encodeURIComponent(cfg.modeName)}&select=id&limit=1`);
     const mode = mr.ok ? (await mr.json())[0] : null;
-    if (!mode) return { error: `ไม่พบโหมด "${MODE_NAME}" ในฐานข้อมูล`, status: 500 };
+    if (!mode) return { error: `ไม่พบโหมด "${cfg.modeName}" ในฐานข้อมูล`, status: 500 };
     modeFilter = `&mode_id=eq.${encodeURIComponent(mode.id)}`;
   }
 
@@ -51,7 +73,7 @@ async function inspectUid(sb, uid) {
   return {
     player,
     tier: best === -1 ? null : TIERS[best],
-    qualifies: best !== -1 && best <= MIN_INDEX,
+    qualifies: best !== -1 && best <= TIERS.indexOf(cfg.minTier),
     signed,
   };
 }
@@ -84,13 +106,15 @@ export default async function handler(req, res) {
   lastRequestByIp.set(ip, now);
 
   try {
+    const cfg = await getConfig(sb);
+
     if (req.method === 'GET') {
       const uid = String(req.query?.uid ?? '').trim();
 
       // ตรวจ UID (preview ก่อนกดสมัคร)
       if (uid) {
         if (!/^\d{5,20}$/.test(uid)) return res.status(400).json({ error: 'UID ต้องเป็นตัวเลข 5 ถึง 20 หลัก' });
-        const r = await inspectUid(sb, uid);
+        const r = await inspectUid(sb, uid, cfg);
         if (r.error) return res.status(r.status).json({ error: r.error });
         return res.status(200).json({
           name: r.player.name,
@@ -98,7 +122,7 @@ export default async function handler(req, res) {
           tier: r.tier,
           qualifies: r.qualifies,
           signed: r.signed,
-          minTier: MIN_TIER,
+          minTier: cfg.minTier,
         });
       }
 
@@ -106,11 +130,11 @@ export default async function handler(req, res) {
       const r = await sb(`event_signups?event_key=eq.${encodeURIComponent(EVENT_KEY)}&select=id`);
       const rows = r.ok ? await r.json() : [];
       return res.status(200).json({
-        title: EVENT_TITLE,
-        description: EVENT_DESC,
-        open: SIGNUP_OPEN,
-        minTier: MIN_TIER,
-        mode: MODE_NAME || null,
+        title: cfg.title,
+        description: cfg.description,
+        open: cfg.open,
+        minTier: cfg.minTier,
+        mode: cfg.modeName,
         count: rows.length,
       });
     }
@@ -120,7 +144,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    if (!SIGNUP_OPEN) return res.status(403).json({ error: 'ปิดรับสมัครแล้ว' });
+    if (!cfg.open) return res.status(403).json({ error: 'ปิดรับสมัครแล้ว' });
 
     let body = req.body;
     if (typeof body === 'string') {
@@ -129,10 +153,10 @@ export default async function handler(req, res) {
     const uid = String(body?.uid ?? '').trim();
     if (!/^\d{5,20}$/.test(uid)) return res.status(400).json({ error: 'UID ต้องเป็นตัวเลข 5 ถึง 20 หลัก' });
 
-    const r = await inspectUid(sb, uid);
+    const r = await inspectUid(sb, uid, cfg);
     if (r.error) return res.status(r.status).json({ error: r.error });
     if (r.signed) return res.status(409).json({ error: 'UID นี้สมัครไปแล้ว' });
-    if (!r.qualifies) return res.status(403).json({ error: `ต้องมีอันดับ ${MIN_TIER} ขึ้นไปจึงจะสมัครได้` });
+    if (!r.qualifies) return res.status(403).json({ error: `ต้องมีอันดับ ${cfg.minTier} ขึ้นไปจึงจะสมัครได้` });
 
     const ins = await sb('event_signups', {
       method: 'POST',
