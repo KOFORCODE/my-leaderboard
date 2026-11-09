@@ -7,9 +7,9 @@
 // ใช้ SUPABASE_SECRET_KEY (อ่าน/เขียนตารางได้โดยไม่ผ่าน RLS)
 
 const TIERS = ['S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
-const EVENT_KEY = 'main'; 
+const EVENT_KEY = 'main'; // ต้องตรงกับ event_key ในตาราง event_signups
 
-
+// ค่าเริ่มต้น ใช้เมื่อยังไม่มีแถวใน event_config หรืออ่านไม่ได้
 const DEFAULT_CONFIG = {
   title: 'Comboo 500 Event',
   description: 'สมัครเข้าร่วม Event ของ Comboo 500 เฉพาะผู้เล่นที่มีอันดับในเว็บ',
@@ -19,8 +19,18 @@ const DEFAULT_CONFIG = {
   closes_at: null,
 };
 
-const lastRequestByIp = new Map();
-const RATE_LIMIT_MS = 2000;
+// จำกัดความถี่แยกตามชนิดคำขอ: การโหลดสถานะ event (GET) ไม่ถูกจำกัด
+// ไม่งั้นการเปิดกล่องแล้วกดตรวจทันทีจะโดน 429 ทั้งที่ยังไม่ได้ทำอะไรผิด
+const LIMIT_MS = { lookup: 1000, post: 2000 };
+const lastByKind = { lookup: new Map(), post: new Map() };
+function tooFast(kind, ip) {
+  const m = lastByKind[kind];
+  const now = Date.now();
+  const last = m.get(ip);
+  if (last && now - last < LIMIT_MS[kind]) return true;
+  m.set(ip, now);
+  return false;
+}
 
 // อ่านค่า event จากฐานข้อมูล แล้วแปลงเป็นรูปแบบที่ใช้จริง
 async function getConfig(sb) {
@@ -82,7 +92,7 @@ export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
   if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
-    return res.status(500).json({ error: 'มึงลืมตั้งค่า key แหละมั้ง' });
+    return res.status(500).json({ error: 'ยังไม่ได้ตั้งค่า SUPABASE_URL / SUPABASE_SECRET_KEY ใน Vercel' });
   }
   res.setHeader('Cache-Control', 'no-store');
 
@@ -98,12 +108,6 @@ export default async function handler(req, res) {
     });
 
   const ip = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
-  const now = Date.now();
-  const last = lastRequestByIp.get(ip);
-  if (last && now - last < RATE_LIMIT_MS) {
-    return res.status(429).json({ error: 'ส่งถี่เกินไป รอสักครู่' });
-  }
-  lastRequestByIp.set(ip, now);
 
   try {
     const cfg = await getConfig(sb);
@@ -114,6 +118,7 @@ export default async function handler(req, res) {
       // ตรวจ UID (preview ก่อนกดสมัคร)
       if (uid) {
         if (!/^\d{5,20}$/.test(uid)) return res.status(400).json({ error: 'UID ต้องเป็นตัวเลข 5 ถึง 20 หลัก' });
+        if (tooFast('lookup', ip)) return res.status(429).json({ error: 'ตรวจถี่เกินไป รอสักครู่' });
         const r = await inspectUid(sb, uid, cfg);
         if (r.error) return res.status(r.status).json({ error: r.error });
         return res.status(200).json({
@@ -145,6 +150,7 @@ export default async function handler(req, res) {
     }
 
     if (!cfg.open) return res.status(403).json({ error: 'ปิดรับสมัครแล้ว' });
+    if (tooFast('post', ip)) return res.status(429).json({ error: 'ส่งถี่เกินไป รอสักครู่' });
 
     let body = req.body;
     if (typeof body === 'string') {
