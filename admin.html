@@ -274,6 +274,9 @@ body.readonly .edit-only{display:none!important}
       <label>📄 ลิงก์ปุ่ม API Docs</label>
       <input type="text" id="s_apidocs" placeholder="เว้นว่างไว้ได้ถ้ายังไม่ใช้" style="margin-bottom:1.2rem">
 
+      <label>🖼 รูปโปสเตอร์ตอนเปิดเว็บ (URL รูป)</label>
+      <input type="text" id="s_poster" placeholder="https://... เว้นว่าง= ไม่แสดงโปสเตอร์" style="margin-bottom:1.2rem">
+
       <button class="btn btn-primary edit-only" onclick="saveSiteSettings()">💾 บันทึก</button>
     </div>
   </div>
@@ -382,7 +385,7 @@ function applyRole(){
   if(b) b.textContent = ro ? 'TESTER · เพิ่ม/แก้ไข Tier' : 'ADMIN';
   const fl = document.getElementById('formLabel');
   if(ro && fl) fl.textContent = '➕ เพิ่มผู้เล่นและ Tier';
-  ['s_discord','s_rankings','s_apidocs'].forEach(id=>{
+  ['s_discord','s_rankings','s_apidocs','s_poster'].forEach(id=>{
     const e = document.getElementById(id);
     if(e) e.disabled = ro;
   });
@@ -615,6 +618,7 @@ async function loadSiteSettings(){
     document.getElementById('s_discord').value = s.discord_url || '';
     document.getElementById('s_rankings').value = s.rankings_url || '';
     document.getElementById('s_apidocs').value = s.api_docs_url || '';
+    document.getElementById('s_poster').value = s.poster_url || '';
   }catch(e){
     console.warn('[loadSiteSettings] โหลดไม่สำเร็จ (อาจยังไม่ได้รัน SQL สร้างตาราง site_settings):', e.message);
   }
@@ -624,8 +628,9 @@ async function saveSiteSettings(){
   const discord_url = document.getElementById('s_discord').value.trim() || null;
   const rankings_url = document.getElementById('s_rankings').value.trim() || null;
   const api_docs_url = document.getElementById('s_apidocs').value.trim() || null;
+  const poster_url = document.getElementById('s_poster').value.trim() || null;
   try{
-    await api('site_settings?id=eq.1', 'PATCH', { discord_url, rankings_url, api_docs_url });
+    await api('site_settings?id=eq.1', 'PATCH', { discord_url, rankings_url, api_docs_url, poster_url });
     toast('บันทึกลิงก์เรียบร้อย');
   }catch(e){
     toast('บันทึกไม่สำเร็จ: '+e.message, false);
