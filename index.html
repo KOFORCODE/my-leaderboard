@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comboo 500 — Tier List</title>
-<meta property="og:title" content="Comboo 500 — Tier List">
-<meta property="og:description" content="🏆 Free Fire Tier List Ranking — ดูอันดับแนวตั้งของผู้เล่น Comboo 500">
+<title>AVEN TIER — Tier List</title>
+<meta property="og:title" content="AVEN TIER — Tier List">
+<meta property="og:description" content="🏆 Free Fire Tier List Ranking — ดูอันดับแนวตั้งของผู้เล่น AVEN TIER">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://my-leaderboard-five.vercel.app">
 <meta property="og:image" content="https://i.postimg.cc/pX75NqQp/333407178686439927.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Comboo 500 — Tier List">
-<meta name="twitter:description" content="🏆 Free Fire Tier List Ranking — ดูอันดับแนวตั้งของผู้เล่น Comboo 500">
+<meta name="twitter:title" content="AVEN TIER — Tier List">
+<meta name="twitter:description" content="🏆 Free Fire Tier List Ranking — ดูอันดับแนวตั้งของผู้เล่น AVEN TIER">
 <meta name="twitter:image" content="https://i.postimg.cc/pX75NqQp/333407178686439927.jpg">
 <meta name="theme-color" content="#e8b84b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -511,7 +511,7 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 
 <nav>
   <div class="logo">
-    <div class="logo-text"><span>Comboo</span> 500</div>
+    <div class="logo-text"><span>AVEN</span> TIER</div>
   </div>
   <div class="nav-center">
     <a class="nav-link" href="#" id="rankingsLink">Rankings</a>
@@ -568,7 +568,7 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 </main>
 
 <footer class="site-foot">
-  <b><span>Comboo</span> 500</b><span class="dot">·</span>Free Fire Tier List<span class="dot">·</span>comboo.net
+  <b><span>AVEN</span> TIER</b><span class="dot">·</span>Free Fire Tier List<span class="dot">·</span>comboo.net
 </footer>
 
 <button type="button" class="to-top" id="toTop" aria-label="กลับขึ้นบน" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
@@ -1220,7 +1220,7 @@ function openModal(pid, rank, pts, tempPlayer){
     </div>`:''}
     ${isTemp?`<div class="modal-section" style="background:var(--accent-soft);border-radius:10px;padding:10px;border:1px solid var(--accent)33">
       <div style="font-size:0.75rem;color:var(--text2);text-align:center;margin-bottom:8px">เทสเทียร์ กดตรงนี้</div>
-      <a href="${document.getElementById('discordLink')?.href||'#'}" target="_blank" style="font-size:0.8rem;color:var(--accent);font-weight:600;text-align:center;text-decoration:none;display:block">[ COMBOO 500 ]</a>
+      <a href="${document.getElementById('discordLink')?.href||'#'}" target="_blank" style="font-size:0.8rem;color:var(--accent);font-weight:600;text-align:center;text-decoration:none;display:block">[ AVEN TIER ]</a>
     </div>`:''}
   `;
 
@@ -1434,7 +1434,7 @@ async function drawCardCanvas(d){
   // ท้ายการ์ด
   c.textAlign='center';
   c.fillStyle='#f2b93e'; c.font=`600 26px ${FONT_DISPLAY}`;
-  c.fillText('COMBOO 500 · LEADERBOARD',CARD_W/2,CARD_H-70);
+  c.fillText('AVEN TIER · LEADERBOARD',CARD_W/2,CARD_H-70);
   c.fillStyle='#4d5268'; c.font=`500 18px ${FONT_MONO}`;
   c.fillText(d.uid&&!d.temp?`${SHARE_BASE_URL}?p=${d.uid}`:location.host,CARD_W/2,CARD_H-36);
   return cv;
@@ -1454,7 +1454,7 @@ async function shareCard(btn){
     // มือถือ: เปิดหน้าต่างแชร์ของระบบ
     if(navigator.canShare&&navigator.canShare({files:[file]})){
       try{
-        await navigator.share({files:[file],title:`${d.name} · COMBOO 500`});
+        await navigator.share({files:[file],title:`${d.name} · AVEN TIER`});
         return;
       }catch(e){
         if(e.name==='AbortError') return; // ผู้ใช้กดยกเลิกเอง
