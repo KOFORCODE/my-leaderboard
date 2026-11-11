@@ -11,8 +11,8 @@ const EVENT_KEY = 'main'; // ต้องตรงกับ event_key ในต�
 
 // ค่าเริ่มต้น ใช้เมื่อยังไม่มีแถวใน event_config หรืออ่านไม่ได้
 const DEFAULT_CONFIG = {
-  title: 'Comboo 500 Event',
-  description: 'สมัครเข้าร่วม Event ของ Comboo 500 เฉพาะผู้เล่นที่มีอันดับในเว็บ',
+  title: 'AVEN TIER Event',
+  description: 'สมัครเข้าร่วม Event ของ AVEN TIER เฉพาะผู้เล่นที่มีอันดับในเว็บ',
   is_open: true,
   min_tier: 'D+',
   mode_name: null,
