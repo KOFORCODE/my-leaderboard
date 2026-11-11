@@ -502,7 +502,13 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 /* POSTER: โปสเตอร์ตอนเปิดเว็บ (ซ่อนไว้จนกว่าจะมี URL รูปจากหน้า admin) */
 .poster{position:fixed;inset:0;z-index:150;background:#05060ee6;backdrop-filter:blur(6px);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:16px;opacity:0;transition:opacity .3s;cursor:pointer}
 .poster.show{opacity:1}
-.poster img{max-width:min(92vw,720px);max-height:80vh;border-radius:14px;box-shadow:0 30px 60px -20px #000}
+.poster img{max-width:min(92vw,720px);max-height:80vh;border-radius:14px;box-shadow:0 30px 60px -20px #000;transition:transform .3s,opacity .3s}
+.poster:not(.show) img{transform:scale(.9);opacity:0}
+.poster.show img{animation:poster-pop .6s cubic-bezier(.34,1.56,.64,1) both}
+.poster.show .ev-btn{animation:poster-rise .5s .25s ease-out both}
+@keyframes poster-pop{from{opacity:0;transform:scale(.6) translateY(24px) rotate(-2deg)}to{opacity:1;transform:none}}
+@keyframes poster-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.poster,.poster img,.poster .ev-btn{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
