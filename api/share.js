@@ -49,8 +49,8 @@ export default async function handler(req, res) {
   const uid = String(req.query.p || '');
   const pageUrl = `${SITE}/?p=${encodeURIComponent(uid)}`;
   const fallback = {
-    title: 'Comboo 500 — Tier List',
-    description: 'ดูอันดับแนวตั้งของผู้เล่น Comboo 500',
+    title: 'AVEN TIER — Tier List',
+    description: 'ดูอันดับแนวตั้งของผู้เล่น AVEN TIER',
     image: DEFAULT_IMAGE,
     url: SITE + '/',
   };
@@ -85,8 +85,8 @@ export default async function handler(req, res) {
     const image = /^https:\/\//i.test(String(p.avatar || '')) ? p.avatar : DEFAULT_IMAGE;
 
     return res.status(200).send(page({
-      title: `${p.name} · Comboo 500`,
-      description: `${parts.join(' · ')} | ดูอันดับและ Tier ของผู้เล่น Comboo 500`,
+      title: `${p.name} · AVEN TIER`,
+      description: `${parts.join(' · ')} | ดูอันดับและ Tier ของผู้เล่น AVEN TIER`,
       image,
       url: pageUrl,
     }));
