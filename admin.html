@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin — AVEN TIER</title>
+<meta name="robots" content="noindex, nofollow">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -982,7 +983,7 @@ async function addMode(){
     toast('✅ เพิ่ม mode สำเร็จ');
     document.getElementById('m_name').value='';
     document.getElementById('m_icon').value='';
-    document.getElementById('m_icon_url').value='';
+    document.getElementById('m_icon_url').value='';a
     document.getElementById('modeIconPreview').innerHTML='🎮';
     document.getElementById('m_overall').checked=false;
     modes=await api('modes?order=sort_order');
