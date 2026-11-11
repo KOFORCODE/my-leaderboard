@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://my-leaderboard-five.vercel.app/sitemap.xml
