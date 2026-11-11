@@ -85,6 +85,7 @@ const FIELD_RULES = {
     discord_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
     rankings_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
     api_docs_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
+    poster_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
   },
   event_config: {
     title: (v) => (typeof v === 'string' && v.trim().length >= 1 && v.length <= 80 ? null : 'ชื่อ event ต้องยาว 1–80 ตัวอักษร'),
