@@ -1,6 +1,7 @@
 
 
 import { timingSafeEqual } from 'node:crypto';
+import { isLocked, recordFail } from './_login-limit.js';
 
 const TIERS = ['S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
 const REGIONS = [
@@ -164,6 +165,11 @@ export default async function handler(req, res) {
     });
   }
 
+  // ล็อกก่อนตรวจรหัส เพื่อไม่ให้ลองต่อได้แม้รหัสจะถูก
+  if (isLocked(req)) {
+    return res.status(429).json({ error: 'ลองรหัสผิดหลายครั้ง รอ 15 นาทีแล้วลองใหม่' });
+  }
+
   // ตรวจรหัสจาก header ทุกครั้งที่เรียก แล้วกำหนด role
   const pw = req.headers['x-admin-pw'];
   let role = null;
@@ -171,6 +177,7 @@ export default async function handler(req, res) {
   else if (TESTER_PW && safeEqual(pw, TESTER_PW)) role = 'tester';
 
   if (!role) {
+    recordFail(req);
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
