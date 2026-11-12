@@ -349,7 +349,7 @@ async function doLogin(){
       return;
     }
     if(!r.ok){
-      document.getElementById('loginErr').textContent='เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ ลองใหม่อีกครั้ง';
+      document.getElementById('loginErr').textContent = r.status===429 ? 'ลองรหัสผิดหลายครั้ง รอ 15 นาทีแล้วลองใหม่' : 'เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ ลองใหม่อีกครั้ง';
       document.getElementById('loginErr').style.display='block';
       return;
     }
@@ -983,7 +983,7 @@ async function addMode(){
     toast('✅ เพิ่ม mode สำเร็จ');
     document.getElementById('m_name').value='';
     document.getElementById('m_icon').value='';
-    document.getElementById('m_icon_url').value='';a
+    document.getElementById('m_icon_url').value='';
     document.getElementById('modeIconPreview').innerHTML='🎮';
     document.getElementById('m_overall').checked=false;
     modes=await api('modes?order=sort_order');
