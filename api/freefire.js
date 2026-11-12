@@ -4,6 +4,7 @@
 // รับทั้งรหัส ADMIN_PW และ TESTER_PW (การค้นหาไม่ได้เขียนข้อมูลลงฐานข้อมูล)
 
 import { timingSafeEqual } from 'node:crypto';
+import { isLocked, recordFail } from './_login-limit.js';
 
 function safeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -31,9 +32,13 @@ export default async function handler(req, res) {
   }
 
   // ต้อง login เป็นแอดมินหรือ tester ก่อนถึงจะเรียก API นี้ได้ (กันคนนอกยิงมาใช้โควตาคีย์ฟรี)
+  if (isLocked(req)) {
+    return res.status(429).json({ error: 'ลองรหัสผิดหลายครั้ง รอ 15 นาทีแล้วลองใหม่' });
+  }
   const pw = req.headers['x-admin-pw'];
   const ok = safeEqual(pw, ADMIN_PW) || (TESTER_PW && safeEqual(pw, TESTER_PW));
   if (!ok) {
+    recordFail(req);
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
