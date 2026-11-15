@@ -554,6 +554,14 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
   <div class="ticker" id="ticker" hidden><div class="ticker-track" id="tickerTrack"></div></div>
 </section>
 
+<section id="bracketSec" style="padding:0 1.5rem">
+  <div class="sec-head" style="padding:0"><span>Event Bracket</span><i></i><b id="brSub">สายการแข่งขัน</b></div>
+  <div class="br-scroll">
+    <div class="br-bracket" id="brBracket"></div>
+    <div class="br-champ" id="brChamp"></div>
+  </div>
+</section>
+
 
 <main>
   <div id="podium"></div>
@@ -621,6 +629,39 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 .ev-done p{margin:0;font-size:.85rem;color:var(--text2);line-height:1.6}
 .ev-msg{margin-top:12px;padding:10px 12px;border-radius:12px;font-size:.82rem;line-height:1.5;background:#ff6b6b14;border:1px solid #ff6b6b55;color:#ff9a9a}
 .ev-msg[hidden],.ev-step[hidden],.ev-done[hidden]{display:none!important}
+</style>
+
+<style>
+/* ===== EVENT BRACKET ===== */
+.br-scroll{overflow-x:auto;padding:1.8rem 1.5rem 1.2rem;background:linear-gradient(180deg,var(--bg1),var(--bg0));border:1px solid var(--border);border-radius:16px;max-width:1280px;margin:0 auto;scrollbar-width:thin}
+.br-bracket{display:flex;align-items:stretch;justify-content:center;min-width:980px;height:560px}
+.br-side{display:flex;flex:1}
+.br-col{display:flex;flex-direction:column;justify-content:space-around;flex:1;position:relative}
+.br-col-label{position:absolute;top:-1.8rem;left:0;right:0;text-align:center;font-family:var(--font-display);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--text3)}
+.br-final-col{flex:1.15;justify-content:center;align-items:center}
+.br-match{position:relative;width:200px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;overflow:visible;box-shadow:0 12px 30px -16px #000}
+.br-match.big{width:220px}
+.br-slot{display:flex;align-items:center;justify-content:space-between;gap:8px;height:34px;padding:0 10px;font-size:.8rem;font-weight:600;border-bottom:1px solid var(--border);border-radius:10px}
+.br-slot:first-child{border-radius:10px 10px 0 0}
+.br-slot:last-child{border-bottom:none;border-radius:0 0 10px 10px}
+.br-match.big .br-slot{height:40px}
+.br-slot .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.br-slot .s{font-family:var(--font-mono);font-size:.72rem;color:var(--text2);min-width:14px;text-align:right}
+.br-slot.tbd .n{color:var(--text3);font-style:italic;font-weight:500}
+.br-slot.win{background:var(--accent-soft);color:var(--accent)}
+.br-slot.win .s{color:var(--accent)}
+.br-side.left .br-col .br-match::after{content:"";position:absolute;top:50%;right:-26px;width:26px;height:1px;background:var(--border2)}
+.br-side.right .br-col .br-match::before{content:"";position:absolute;top:50%;left:-26px;width:26px;height:1px;background:var(--border2)}
+.br-final-box{width:230px}
+.br-final-title{font-family:var(--font-display);font-size:.78rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);text-align:center;padding:6px;background:var(--accent-soft);border:1px solid var(--border2);border-bottom:none;border-radius:10px 10px 0 0}
+.br-final-box .br-match{border-radius:0 0 10px 10px}
+.br-champ{margin-top:1.2rem;text-align:center}
+.br-champ .lbl{font-family:var(--font-display);font-size:.68rem;letter-spacing:.2em;color:var(--text3);text-transform:uppercase}
+.br-champ .name{font-family:var(--font-display);font-size:1.2rem;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:.2rem}
+@media (max-width:640px){.br-scroll{padding:1.4rem .8rem}}
+.br-slot.mine{box-shadow:inset 3px 0 0 var(--accent)}
+.br-vote{background:var(--accent);color:#1a1305;border:none;border-radius:6px;padding:3px 9px;font-family:var(--font-display);font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;font-weight:600;cursor:pointer}
+.br-vote:hover{opacity:.85}
 </style>
 
 <div class="modal-backdrop" id="eventBackdrop" onclick="closeEvent(event)" style="display:none">
@@ -765,6 +806,7 @@ async function load(){
     }
     renderTabs();
     render();
+    loadBracket();
     loadTicker();
     openFromUrl(); // ลิงก์ ?p=<uid> เปิดการ์ดผู้เล่นทันที
   }catch(err){
@@ -1567,6 +1609,136 @@ async function loadTicker(){
     // ยังไม่ได้รัน sql/tier_history.sql หรือโหลดไม่ได้ ไม่ต้องแสดงแถบ
   }
 }
+
+// ===== EVENT BRACKET =====
+// ข้อมูลสายการแข่งขันมาจาก /api/bracket (แอดมินตั้งผู้เล่นและผู้ชนะที่หน้า admin)
+// ชื่อผู้เล่นดึงจาก players ที่โหลดไว้แล้ว โดยเทียบ UID
+let brMatches = [];
+
+function brNameOf(uid){
+  const p=(players||[]).find(x=>String(x.uid)===String(uid));
+  return p ? {name:p.name, found:true} : {name:'UID '+uid, found:false};
+}
+
+function brMatchOf(id){
+  return brMatches.find(x=>x.id===id) || {id, a:null, b:null, winner:null, votes:{a:0,b:0}, myChoice:null};
+}
+
+function brSlot(uid, win, mine, m, side){
+  const el=document.createElement('div');
+  el.className='br-slot'+(uid?'':' tbd')+(win?' win':'')+(mine?' mine':'');
+  const n=document.createElement('span'); n.className='n';
+  if(uid){
+    const p=brNameOf(uid);
+    n.textContent=p.name;
+    if(!p.found) n.title='ไม่พบ UID นี้ในฐานข้อมูล';
+  } else {
+    n.textContent='TBD';
+  }
+  el.appendChild(n);
+
+  const right=document.createElement('span'); right.className='s';
+  const total=m.votes.a+m.votes.b;
+  const canVote=uid && m.a && m.b && !m.winner && !m.myChoice;
+  if(canVote){
+    const btn=document.createElement('button');
+    btn.className='br-vote';
+    btn.type='button';
+    btn.textContent='โหวต';
+    btn.onclick=()=>brVote(m.id, side);
+    right.appendChild(btn);
+  } else if(uid && total>0){
+    right.textContent=Math.round(m.votes[side]*100/total)+'%';
+  }
+  el.appendChild(right);
+  return el;
+}
+
+function brMatch(m, big){
+  const box=document.createElement('div');
+  box.className='br-match'+(big?' big':'');
+  const w=m.winner;
+  box.append(
+    brSlot(m.a, !!w && w===m.a, m.myChoice==='a', m, 'a'),
+    brSlot(m.b, !!w && w===m.b, m.myChoice==='b', m, 'b')
+  );
+  return box;
+}
+
+function brCol(cls, items, label){
+  const c=document.createElement('div');
+  c.className='br-col '+cls;
+  if(label){ const l=document.createElement('div'); l.className='br-col-label'; l.textContent=label; c.appendChild(l); }
+  items.forEach(it=>c.appendChild(it));
+  return c;
+}
+
+function renderBracket(){
+  const root=document.getElementById('brBracket');
+  root.innerHTML='';
+
+  const left=document.createElement('div');
+  left.className='br-side left';
+  left.append(
+    brCol('qf',[brMatch(brMatchOf(1)),brMatch(brMatchOf(2))],'Quarter Final'),
+    brCol('sf',[brMatch(brMatchOf(5),true)],'Semi Final')
+  );
+
+  const right=document.createElement('div');
+  right.className='br-side right';
+  right.append(
+    brCol('sf',[brMatch(brMatchOf(6),true)],'Semi Final'),
+    brCol('qf',[brMatch(brMatchOf(3)),brMatch(brMatchOf(4))],'Quarter Final')
+  );
+
+  const fin=document.createElement('div');
+  fin.className='br-col br-final-col';
+  const fl=document.createElement('div'); fl.className='br-col-label'; fl.textContent='Final';
+  const fb=document.createElement('div'); fb.className='br-final-box';
+  const ft=document.createElement('div'); ft.className='br-final-title'; ft.textContent='FINAL';
+  const fm=brMatchOf(7);
+  fb.append(ft, brMatch(fm,true));
+  fin.append(fl, fb);
+
+  root.append(left, fin, right);
+
+  const champ=document.getElementById('brChamp');
+  champ.innerHTML='';
+  if(fm.winner){
+    const l=document.createElement('div'); l.className='lbl'; l.textContent='Champion';
+    const n=document.createElement('div'); n.className='name'; n.textContent=brNameOf(fm.winner).name;
+    champ.append(l,n);
+  }
+}
+
+async function loadBracket(){
+  try{
+    const r=await fetch('/api/bracket');
+    if(r.ok){ const d=await r.json(); brMatches=d.matches||[]; }
+  }catch{
+    // โหลดไม่ได้ ใช้ข้อมูลเดิมที่มีอยู่
+  }
+  renderBracket();
+}
+
+async function brVote(id, side){
+  try{
+    const r=await fetch('/api/bracket',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({id, choice:side}),
+    });
+    if(!r.ok){
+      const d=await r.json().catch(()=>({}));
+      showSearchToast(d.error||'โหวตไม่สำเร็จ');
+    }
+  }catch{
+    showSearchToast('เชื่อมต่อไม่สำเร็จ ลองใหม่');
+  }
+  loadBracket();
+}
+
+renderBracket();
 
 // ===== ระบบสมัคร Event =====
 let eventPreview = null; // ข้อมูลผู้เล่นที่ตรวจแล้ว
