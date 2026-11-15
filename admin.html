@@ -317,6 +317,9 @@ body.readonly .edit-only{display:none!important}
       <div class="card-title">🏆 Event Bracket</div>
       <label style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;cursor:pointer"><input type="checkbox" id="brVisible" style="width:auto" onchange="saveBracketVisible()"> แสดงหน้า Bracket บนเว็บ (ปิดไว้ถ้าไม่มี event)</label>
       <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.2rem">ตั้งคู่แข่งและ<b>ผู้ชนะจริง</b>ที่นี่ ผู้เข้าชมหน้าเว็บโหวตได้ แต่ผู้ชนะจะกำหนดจากแอดมินเท่านั้น · SF / Final เว้นว่างไว้ = ดึงผู้ชนะรอบก่อนอัตโนมัติ</p>
+      <textarea id="brBulk" rows="6" placeholder="วาง UID ทีละบรรทัด&#10;ลำดับ: QF1 A, QF1 B, QF2 A, QF2 B, QF3 A, QF3 B, QF4 A, QF4 B" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--bg3);color:var(--text1);font-family:var(--font-mono);font-size:0.85rem;margin-bottom:8px"></textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px"><button class="btn btn-ghost edit-only" onclick="brDistribute()">ตรวจสอบและวางลงช่อง</button><button class="btn btn-primary edit-only" onclick="brSaveAllQF()">💾 บันทึก QF ทั้งหมด</button></div>
+      <div id="brBulkMsg" style="font-size:0.8rem;margin-bottom:12px;min-height:1em"></div>
       <div id="brAdminList"></div>
     </div>
   </div>
@@ -590,21 +593,70 @@ function renderBracketAdmin(){
   brRows.forEach(r => brHint(r.id));
 }
 
-async function saveBracketRow(id){
+// อ่านค่าช่องของคู่หนึ่งและตรวจ ถ้าผิดแจ้งเตือนแล้วคืน null
+function brReadRow(id){
   const get = (p) => document.getElementById(p + id).value.trim();
   const a = get('brA_'), b = get('brB_'), w = get('brW_');
   const checks = [['A', a], ['B', b], ['ผู้ชนะ', w]];
   for(const [label, v] of checks){
-    if(v && !/^[0-9]{1,20}$/.test(v)){ toast('UID ' + label + ' ต้องเป็นตัวเลข', false); return; }
-    if(v && !players.some(p => String(p.uid) === v)){ toast('UID ' + label + ' ไม่พบในฐานข้อมูล', false); return; }
+    if(v && !/^[0-9]{1,20}$/.test(v)){ toast('UID ' + label + ' ต้องเป็นตัวเลข', false); return null; }
+    if(v && !players.some(p => String(p.uid) === v)){ toast('UID ' + label + ' ไม่พบในฐานข้อมูล', false); return null; }
   }
   // ผู้ชนะต้องเป็น A หรือ B (ถ้าช่องว่าง ใช้คู่ที่คำนวณอัตโนมัติ)
   const res = brResolved.find(m => m.id === id) || {};
   const effA = a || res.a || null, effB = b || res.b || null;
-  if(w && w !== effA && w !== effB){ toast('ผู้ชนะต้องเป็น A หรือ B ของคู่นี้', false); return; }
+  if(w && w !== effA && w !== effB){ toast('ผู้ชนะต้องเป็น A หรือ B ของคู่นี้', false); return null; }
+  return { a_uid: a || null, b_uid: b || null, winner_uid: w || null };
+}
+
+async function saveBracketRow(id){
+  const payload = brReadRow(id);
+  if(!payload) return;
   try{
-    await api('event_bracket?id=eq.' + id, 'PATCH', { a_uid: a || null, b_uid: b || null, winner_uid: w || null });
+    await api('event_bracket?id=eq.' + id, 'PATCH', payload);
     toast('บันทึกคู่ ' + (BR_LABEL[id] || id) + ' เรียบร้อย');
+    loadBracketAdmin();
+  }catch(e){
+    toast('บันทึกไม่สำเร็จ: ' + e.message, false);
+  }
+}
+
+// วาง UID ทีละบรรทัดลงช่อง QF 1–4 ตามลำดับ: QF1 A, QF1 B, QF2 A, QF2 B, ...
+function brDistribute(){
+  const lines = document.getElementById('brBulk').value.split('\n').map(s => s.trim()).filter(Boolean);
+  const msg = document.getElementById('brBulkMsg');
+  const errs = [];
+  if(lines.length > 8) errs.push('มี ' + lines.length + ' บรรทัด แต่ QF มีแค่ 8 ช่อง');
+  lines.forEach((u, i) => {
+    if(!/^[0-9]{1,20}$/.test(u)) errs.push('บรรทัด ' + (i + 1) + ': "' + u + '" ไม่ใช่ตัวเลข');
+    else if(!players.some(p => String(p.uid) === u)) errs.push('บรรทัด ' + (i + 1) + ': ' + u + ' ไม่พบในฐานข้อมูล');
+  });
+  if(errs.length){
+    msg.style.color = '#ff6b88';
+    msg.innerHTML = errs.map(esc).join('<br>');
+    return false;
+  }
+  for(let i = 0; i < 8; i++){
+    const id = Math.floor(i / 2) + 1;
+    const side = i % 2 === 0 ? 'brA_' : 'brB_';
+    document.getElementById(side + id).value = lines[i] || '';
+  }
+  for(let id = 1; id <= 4; id++) brHint(id);
+  msg.style.color = 'var(--text2)';
+  msg.textContent = 'วางแล้ว ' + lines.length + ' UID (ช่อง QF ทั้ง 8 ถูกเขียนทับ) — ตรวจชื่อแล้วกดบันทึก';
+  return true;
+}
+
+// บันทึก QF 1–4 ทั้งหมดในครั้งเดียว (ไม่โหลดใหม่ระหว่างทาง เพื่อไม่ให้ค่าที่พิมพ์ค้างหาย)
+async function brSaveAllQF(){
+  if(!brDistribute()) return;
+  const payloads = [1, 2, 3, 4].map(brReadRow);
+  if(payloads.some(p => !p)) return;
+  try{
+    for(let id = 1; id <= 4; id++){
+      await api('event_bracket?id=eq.' + id, 'PATCH', payloads[id - 1]);
+    }
+    toast('บันทึก QF ทั้ง 4 คู่แล้ว');
     loadBracketAdmin();
   }catch(e){
     toast('บันทึกไม่สำเร็จ: ' + e.message, false);
@@ -762,7 +814,7 @@ function onModeChange(){
 // PLAYERS
 // ส่ง id เข้า onclick โดยคงชนิดเดิมไว้ (ตัวเลขยังเป็นตัวเลข, ข้อความยังเป็นข้อความ)
 // เพราะถ้า id เป็นตัวเลขแต่ถูกใส่เป็น '...' ฟังก์ชันจะหา players.find(x=>x.id===id) ไม่เจอแล้วเงียบไป
-function idArg(v){ return JSON.stringify(v).replace(/"/g,'&quot;') }
+function idArg(v){ return esc(JSON.stringify(v)) }
 
 function renderPlayerList(){
   const el=document.getElementById('playerList');
