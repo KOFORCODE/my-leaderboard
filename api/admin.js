@@ -18,6 +18,8 @@ const ACCESS = {
     site_settings: ['GET', 'PATCH'],
     event_signups: ['GET', 'DELETE'],
     event_config: ['GET', 'PATCH'],
+    event_bracket: ['GET', 'PATCH'],
+    event_votes: ['GET'],
   },
   tester: {
     modes: ['GET'],
@@ -26,6 +28,8 @@ const ACCESS = {
     site_settings: ['GET'],
     event_signups: ['GET'],
     event_config: ['GET'],
+    event_bracket: ['GET'],
+    event_votes: ['GET'],
   },
 };
 
@@ -87,6 +91,11 @@ const FIELD_RULES = {
     rankings_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
     api_docs_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
     poster_url: (v) => (isEmpty(v) || isHttpUrl(v) ? null : URL_MSG),
+  },
+  event_bracket: {
+    a_uid: (v) => (isEmpty(v) || /^\d{1,20}$/.test(String(v)) ? null : 'UID ผู้เล่น A ต้องเป็นตัวเลข'),
+    b_uid: (v) => (isEmpty(v) || /^\d{1,20}$/.test(String(v)) ? null : 'UID ผู้เล่น B ต้องเป็นตัวเลข'),
+    winner_uid: (v) => (isEmpty(v) || /^\d{1,20}$/.test(String(v)) ? null : 'UID ผู้ชนะต้องเป็นตัวเลข'),
   },
   event_config: {
     title: (v) => (typeof v === 'string' && v.trim().length >= 1 && v.length <= 80 ? null : 'ชื่อ event ต้องยาว 1–80 ตัวอักษร'),
