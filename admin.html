@@ -315,6 +315,7 @@ body.readonly .edit-only{display:none!important}
   <div class="section" id="sec-bracket">
     <div class="card">
       <div class="card-title">🏆 Event Bracket</div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:1rem;cursor:pointer"><input type="checkbox" id="brVisible" style="width:auto" onchange="saveBracketVisible()"> แสดงหน้า Bracket บนเว็บ (ปิดไว้ถ้าไม่มี event)</label>
       <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.2rem">ตั้งคู่แข่งและ<b>ผู้ชนะจริง</b>ที่นี่ ผู้เข้าชมหน้าเว็บโหวตได้ แต่ผู้ชนะจะกำหนดจากแอดมินเท่านั้น · SF / Final เว้นว่างไว้ = ดึงผู้ชนะรอบก่อนอัตโนมัติ</p>
       <div id="brAdminList"></div>
     </div>
@@ -523,31 +524,50 @@ function toast(msg,ok=true){
 const BR_LABEL = {1:'QF 1 (ซ้าย)',2:'QF 2 (ซ้าย)',3:'QF 3 (ขวา)',4:'QF 4 (ขวา)',5:'SF ซ้าย',6:'SF ขวา',7:'Final'};
 let brRows = [], brResolved = [];
 
-function brNameOf(uid){
+// ชื่อจาก UID ที่มีในฐานข้อมูล ไว้เช็กว่าพิมพ์ UID ถูกคนหรือไม่
+function brInfo(uid){
+  if(!uid) return '';
   const p = players.find(x => String(x.uid) === String(uid));
-  return p ? p.name : 'UID ' + uid;
+  return p ? p.name : '⚠ ไม่พบ UID นี้ในฐานข้อมูล';
 }
 
-function brPlayerOptions(sel, emptyLabel){
-  const list = players.filter(p => p.uid).slice().sort((x,y) => String(x.name).localeCompare(String(y.name), 'th'));
-  return `<option value="">${esc(emptyLabel)}</option>` + list.map(p => {
-    const uid = String(p.uid);
-    return `<option value="${esc(uid)}"${uid === String(sel || '') ? ' selected' : ''}>${esc(p.name)} (${esc(uid)})</option>`;
-  }).join('');
+function brHint(id){
+  [['brA_','brHA_'],['brB_','brHB_'],['brW_','brHW_']].forEach(([inp, hint]) => {
+    const el = document.getElementById(inp + id);
+    const h = document.getElementById(hint + id);
+    if(!el || !h) return;
+    const v = el.value.trim();
+    h.textContent = brInfo(v);
+    h.style.color = (v && !players.some(p => String(p.uid) === v)) ? '#ff6b88' : 'var(--text2)';
+  });
 }
 
 async function loadBracketAdmin(){
   const list = document.getElementById('brAdminList');
   try{
-    const [rows, pub] = await Promise.all([
+    const [rows, cfg, pub] = await Promise.all([
       api('event_bracket?select=*&order=id'),
+      api('event_config?id=eq.1&select=bracket_visible'),
       fetch('/api/bracket').then(r => r.json()),
     ]);
     brRows = rows || [];
     brResolved = pub.matches || [];
+    document.getElementById('brVisible').checked = !!(cfg && cfg[0] && cfg[0].bracket_visible);
     renderBracketAdmin();
   }catch(e){
     list.innerHTML = '<p style="color:var(--text3)">โหลดไม่สำเร็จ: ' + esc(e.message) + ' (อาจยังไม่ได้รัน sql/event_bracket.sql)</p>';
+  }
+}
+
+async function saveBracketVisible(){
+  const el = document.getElementById('brVisible');
+  const on = el.checked;
+  try{
+    await api('event_config?id=eq.1', 'PATCH', { bracket_visible: on });
+    toast(on ? 'เปิดหน้า Bracket บนเว็บแล้ว' : 'ปิดหน้า Bracket บนเว็บแล้ว');
+  }catch(e){
+    el.checked = !on;
+    toast('บันทึกไม่สำเร็จ: ' + e.message, false);
   }
 }
 
@@ -556,44 +576,34 @@ function renderBracketAdmin(){
   list.innerHTML = brRows.map(r => {
     const res = brResolved.find(m => m.id === r.id) || {};
     const v = res.votes || {a:0, b:0};
-    const autoLabel = r.id <= 4 ? '— ยังไม่กำหนด —' : '— อัตโนมัติ —';
+    const hint = r.id <= 4 ? 'UID' : 'ว่าง = อัตโนมัติ';
     return `<div style="border:1px solid var(--border2);border-radius:10px;padding:12px;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.85rem"><b>${esc(BR_LABEL[r.id])}</b><span style="color:var(--text2)">โหวต A: ${v.a} · B: ${v.b}</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center">
-        <select id="brA_${r.id}" onchange="brWinnerOpts(${r.id})">${brPlayerOptions(r.a_uid, autoLabel)}</select>
-        <select id="brB_${r.id}" onchange="brWinnerOpts(${r.id})">${brPlayerOptions(r.b_uid, autoLabel)}</select>
-        <select id="brW_${r.id}"></select>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:start">
+        <div><input id="brA_${r.id}" value="${esc(r.a_uid || '')}" placeholder="UID A (${esc(hint)})" inputmode="numeric" oninput="brHint(${r.id})"><small id="brHA_${r.id}" style="font-size:0.75rem"></small></div>
+        <div><input id="brB_${r.id}" value="${esc(r.b_uid || '')}" placeholder="UID B (${esc(hint)})" inputmode="numeric" oninput="brHint(${r.id})"><small id="brHB_${r.id}" style="font-size:0.75rem"></small></div>
+        <div><input id="brW_${r.id}" value="${esc(r.winner_uid || '')}" placeholder="UID ผู้ชนะ (ว่าง = ยังไม่ตัดสิน)" inputmode="numeric" oninput="brHint(${r.id})"><small id="brHW_${r.id}" style="font-size:0.75rem"></small></div>
         <button class="btn btn-primary edit-only" onclick="saveBracketRow(${r.id})">💾</button>
       </div>
     </div>`;
   }).join('');
-  brRows.forEach(r => {
-    brWinnerOpts(r.id);
-    document.getElementById('brW_' + r.id).value = r.winner_uid || '';
-  });
-}
-
-// ตัวเลือกผู้ชนะ = ผู้เล่นสองฝั่งของแมตช์นั้น (ถ้าช่องว่าง ใช้คู่ที่คำนวณอัตโนมัติ)
-function brWinnerOpts(id){
-  const res = brResolved.find(m => m.id === id) || {};
-  const a = document.getElementById('brA_' + id).value || res.a || '';
-  const b = document.getElementById('brB_' + id).value || res.b || '';
-  const sel = document.getElementById('brW_' + id);
-  const cur = sel.value;
-  let html = '<option value="">ยังไม่ตัดสิน</option>';
-  if(a) html += `<option value="${esc(a)}">${esc(brNameOf(a))}</option>`;
-  if(b) html += `<option value="${esc(b)}">${esc(brNameOf(b))}</option>`;
-  sel.innerHTML = html;
-  sel.value = (cur === a || cur === b) ? cur : '';
+  brRows.forEach(r => brHint(r.id));
 }
 
 async function saveBracketRow(id){
-  const a = document.getElementById('brA_' + id).value || null;
-  const b = document.getElementById('brB_' + id).value || null;
-  const w = document.getElementById('brW_' + id).value || null;
-  if(w && w !== a && w !== b){ toast('ผู้ชนะต้องเป็นหนึ่งในสองฝั่งของคู่นี้', false); return; }
+  const get = (p) => document.getElementById(p + id).value.trim();
+  const a = get('brA_'), b = get('brB_'), w = get('brW_');
+  const checks = [['A', a], ['B', b], ['ผู้ชนะ', w]];
+  for(const [label, v] of checks){
+    if(v && !/^[0-9]{1,20}$/.test(v)){ toast('UID ' + label + ' ต้องเป็นตัวเลข', false); return; }
+    if(v && !players.some(p => String(p.uid) === v)){ toast('UID ' + label + ' ไม่พบในฐานข้อมูล', false); return; }
+  }
+  // ผู้ชนะต้องเป็น A หรือ B (ถ้าช่องว่าง ใช้คู่ที่คำนวณอัตโนมัติ)
+  const res = brResolved.find(m => m.id === id) || {};
+  const effA = a || res.a || null, effB = b || res.b || null;
+  if(w && w !== effA && w !== effB){ toast('ผู้ชนะต้องเป็น A หรือ B ของคู่นี้', false); return; }
   try{
-    await api('event_bracket?id=eq.' + id, 'PATCH', { a_uid: a, b_uid: b, winner_uid: w });
+    await api('event_bracket?id=eq.' + id, 'PATCH', { a_uid: a || null, b_uid: b || null, winner_uid: w || null });
     toast('บันทึกคู่ ' + (BR_LABEL[id] || id) + ' เรียบร้อย');
     loadBracketAdmin();
   }catch(e){
