@@ -104,6 +104,7 @@ const FIELD_RULES = {
     min_tier: (v) => (TIERS.includes(v) ? null : 'Tier ไม่ถูกต้อง'),
     mode_name: (v) => (v === null || (typeof v === 'string' && v.length <= 60) ? null : 'ชื่อโหมดยาวเกินไป'),
     closes_at: (v) => (v === null || (typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date.parse(v))) ? null : 'วันปิดรับสมัครไม่ถูกต้อง'),
+    bracket_visible: (v) => (typeof v === 'boolean' ? null : 'bracket_visible ต้องเป็น true/false'),
   },
 };
 
