@@ -555,11 +555,13 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 </section>
 
 <section id="bracketSec" hidden style="padding:0 1.5rem">
-  <div class="sec-head" style="padding:0"><span>Event Bracket</span><i></i><b id="brSub">สายการแข่งขัน</b></div>
-  <div class="br-scroll">
-    <div class="br-bracket" id="brBracket"></div>
-    <div class="br-champ" id="brChamp"></div>
-  </div>
+  <details class="br-details" id="brDetails">
+    <summary class="sec-head br-summary" style="padding:0"><span>Event Bracket</span><i></i><b id="brSub">สายการแข่งขัน</b></summary>
+    <div class="br-scroll">
+      <div class="br-bracket" id="brBracket"></div>
+      <div class="br-champ" id="brChamp"></div>
+    </div>
+  </details>
 </section>
 
 
@@ -658,7 +660,27 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 .br-champ{margin-top:1.2rem;text-align:center}
 .br-champ .lbl{font-family:var(--font-display);font-size:.68rem;letter-spacing:.2em;color:var(--text3);text-transform:uppercase}
 .br-champ .name{font-family:var(--font-display);font-size:1.2rem;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:.2rem}
-@media (max-width:640px){.br-scroll{padding:1.4rem .8rem}}
+@media (max-width:768px){
+  .br-scroll{overflow:visible;padding:1.2rem .8rem}
+  .br-bracket{min-width:0;height:auto;flex-direction:column;align-items:stretch;justify-content:flex-start}
+  .br-side{display:contents}
+  .br-col{flex:none;justify-content:flex-start;align-items:center;gap:10px;margin-bottom:18px}
+  .br-col-label{position:static;text-align:left;width:100%;max-width:320px;margin-bottom:-2px}
+  .br-match,.br-match.big,.br-final-box{width:100%;max-width:320px}
+  .br-slot,.br-match.big .br-slot{height:40px;font-size:.85rem}
+  .br-side .br-col .br-match::after,.br-side .br-col .br-match::before{display:none}
+  .br-side.left .qf{order:1}
+  .br-side.right .qf{order:2}
+  .br-side.left .sf{order:3}
+  .br-side.right .sf{order:4}
+  .br-final-col{order:5;flex:none;justify-content:flex-start;align-items:center}
+  .br-champ{margin-top:0;margin-bottom:6px}
+}
+.br-summary{cursor:pointer;list-style:none;align-items:center}
+.br-summary::-webkit-details-marker{display:none}
+.br-summary::after{content:'▾';color:var(--accent);font-size:.9rem;margin-left:4px;transition:transform .2s}
+.br-details[open] .br-summary::after{transform:rotate(180deg)}
+.br-details{margin-bottom:.4rem}
 .br-slot.mine{box-shadow:inset 3px 0 0 var(--accent)}
 .br-vote{background:var(--accent);color:#1a1305;border:none;border-radius:6px;padding:3px 9px;font-family:var(--font-display);font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;font-weight:600;cursor:pointer}
 .br-vote:hover{opacity:.85}
@@ -1739,6 +1761,8 @@ async function brVote(id, side){
 }
 
 renderBracket();
+// บนจอใหญ่เปิดไว้เลย บนมือถือพับไว้ เพื่อให้ตารางอันดับอยู่ด้านบนสุด
+document.getElementById('brDetails').open = window.matchMedia('(min-width:769px)').matches;
 
 // ===== ระบบสมัคร Event =====
 let eventPreview = null; // ข้อมูลผู้เล่นที่ตรวจแล้ว
