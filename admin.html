@@ -139,6 +139,7 @@ body.readonly .edit-only{display:none!important}
     <button class="atab" data-tab="modes" onclick="switchTab('modes', this)">🎮 Game Mode</button>
     <button class="atab" data-tab="settings" onclick="switchTab('settings', this)">⚙️ ตั้งค่าเว็บ</button>
     <button class="atab" data-tab="event" onclick="switchTab('event', this)">🎟 Event</button>
+    <button class="atab" data-tab="bracket" onclick="switchTab('bracket', this)">🏆 Bracket</button>
   </div>
 
   <!-- PLAYERS SECTION -->
@@ -308,6 +309,14 @@ body.readonly .edit-only{display:none!important}
       <input type="datetime-local" id="e_closes" style="margin-bottom:1.2rem">
 
       <button class="btn btn-primary edit-only" onclick="saveEventConfig()">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <div class="section" id="sec-bracket">
+    <div class="card">
+      <div class="card-title">🏆 Event Bracket</div>
+      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:1.2rem">ตั้งคู่แข่งและ<b>ผู้ชนะจริง</b>ที่นี่ ผู้เข้าชมหน้าเว็บโหวตได้ แต่ผู้ชนะจะกำหนดจากแอดมินเท่านั้น · SF / Final เว้นว่างไว้ = ดึงผู้ชนะรอบก่อนอัตโนมัติ</p>
+      <div id="brAdminList"></div>
     </div>
   </div>
 
@@ -510,6 +519,88 @@ function toast(msg,ok=true){
   setTimeout(()=>el.classList.remove('show'),2500);
 }
 
+// BRACKET (แอดมิน)
+const BR_LABEL = {1:'QF 1 (ซ้าย)',2:'QF 2 (ซ้าย)',3:'QF 3 (ขวา)',4:'QF 4 (ขวา)',5:'SF ซ้าย',6:'SF ขวา',7:'Final'};
+let brRows = [], brResolved = [];
+
+function brNameOf(uid){
+  const p = players.find(x => String(x.uid) === String(uid));
+  return p ? p.name : 'UID ' + uid;
+}
+
+function brPlayerOptions(sel, emptyLabel){
+  const list = players.filter(p => p.uid).slice().sort((x,y) => String(x.name).localeCompare(String(y.name), 'th'));
+  return `<option value="">${esc(emptyLabel)}</option>` + list.map(p => {
+    const uid = String(p.uid);
+    return `<option value="${esc(uid)}"${uid === String(sel || '') ? ' selected' : ''}>${esc(p.name)} (${esc(uid)})</option>`;
+  }).join('');
+}
+
+async function loadBracketAdmin(){
+  const list = document.getElementById('brAdminList');
+  try{
+    const [rows, pub] = await Promise.all([
+      api('event_bracket?select=*&order=id'),
+      fetch('/api/bracket').then(r => r.json()),
+    ]);
+    brRows = rows || [];
+    brResolved = pub.matches || [];
+    renderBracketAdmin();
+  }catch(e){
+    list.innerHTML = '<p style="color:var(--text3)">โหลดไม่สำเร็จ: ' + esc(e.message) + ' (อาจยังไม่ได้รัน sql/event_bracket.sql)</p>';
+  }
+}
+
+function renderBracketAdmin(){
+  const list = document.getElementById('brAdminList');
+  list.innerHTML = brRows.map(r => {
+    const res = brResolved.find(m => m.id === r.id) || {};
+    const v = res.votes || {a:0, b:0};
+    const autoLabel = r.id <= 4 ? '— ยังไม่กำหนด —' : '— อัตโนมัติ —';
+    return `<div style="border:1px solid var(--border2);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.85rem"><b>${esc(BR_LABEL[r.id])}</b><span style="color:var(--text2)">โหวต A: ${v.a} · B: ${v.b}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:center">
+        <select id="brA_${r.id}" onchange="brWinnerOpts(${r.id})">${brPlayerOptions(r.a_uid, autoLabel)}</select>
+        <select id="brB_${r.id}" onchange="brWinnerOpts(${r.id})">${brPlayerOptions(r.b_uid, autoLabel)}</select>
+        <select id="brW_${r.id}"></select>
+        <button class="btn btn-primary edit-only" onclick="saveBracketRow(${r.id})">💾</button>
+      </div>
+    </div>`;
+  }).join('');
+  brRows.forEach(r => {
+    brWinnerOpts(r.id);
+    document.getElementById('brW_' + r.id).value = r.winner_uid || '';
+  });
+}
+
+// ตัวเลือกผู้ชนะ = ผู้เล่นสองฝั่งของแมตช์นั้น (ถ้าช่องว่าง ใช้คู่ที่คำนวณอัตโนมัติ)
+function brWinnerOpts(id){
+  const res = brResolved.find(m => m.id === id) || {};
+  const a = document.getElementById('brA_' + id).value || res.a || '';
+  const b = document.getElementById('brB_' + id).value || res.b || '';
+  const sel = document.getElementById('brW_' + id);
+  const cur = sel.value;
+  let html = '<option value="">ยังไม่ตัดสิน</option>';
+  if(a) html += `<option value="${esc(a)}">${esc(brNameOf(a))}</option>`;
+  if(b) html += `<option value="${esc(b)}">${esc(brNameOf(b))}</option>`;
+  sel.innerHTML = html;
+  sel.value = (cur === a || cur === b) ? cur : '';
+}
+
+async function saveBracketRow(id){
+  const a = document.getElementById('brA_' + id).value || null;
+  const b = document.getElementById('brB_' + id).value || null;
+  const w = document.getElementById('brW_' + id).value || null;
+  if(w && w !== a && w !== b){ toast('ผู้ชนะต้องเป็นหนึ่งในสองฝั่งของคู่นี้', false); return; }
+  try{
+    await api('event_bracket?id=eq.' + id, 'PATCH', { a_uid: a, b_uid: b, winner_uid: w });
+    toast('บันทึกคู่ ' + (BR_LABEL[id] || id) + ' เรียบร้อย');
+    loadBracketAdmin();
+  }catch(e){
+    toast('บันทึกไม่สำเร็จ: ' + e.message, false);
+  }
+}
+
 // TABS
 function switchTab(name, el){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -522,6 +613,7 @@ function switchTab(name, el){
     if(btn) btn.classList.add('active');
   }
   if(name==='modes') renderModes();
+  if(name==='bracket') loadBracketAdmin();
 }
 
 // TIER GRID
