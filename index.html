@@ -554,7 +554,7 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
   <div class="ticker" id="ticker" hidden><div class="ticker-track" id="tickerTrack"></div></div>
 </section>
 
-<section id="bracketSec" style="padding:0 1.5rem">
+<section id="bracketSec" hidden style="padding:0 1.5rem">
   <div class="sec-head" style="padding:0"><span>Event Bracket</span><i></i><b id="brSub">สายการแข่งขัน</b></div>
   <div class="br-scroll">
     <div class="br-bracket" id="brBracket"></div>
@@ -1714,7 +1714,7 @@ function renderBracket(){
 async function loadBracket(){
   try{
     const r=await fetch('/api/bracket');
-    if(r.ok){ const d=await r.json(); brMatches=d.matches||[]; }
+    if(r.ok){ const d=await r.json(); brMatches=d.matches||[]; document.getElementById('bracketSec').hidden=!d.visible; }
   }catch{
     // โหลดไม่ได้ ใช้ข้อมูลเดิมที่มีอยู่
   }
