@@ -1,10 +1,3 @@
-// /api/bracket.js
-// Vercel Serverless Function — สายการแข่งขัน + โหวตผู้ชนะ (สาธารณะ)
-// GET   → แมตช์ทั้งหมด (คู่แข่งที่คำนวณแล้ว, ผู้ชนะที่แอดมินตั้ง, จำนวนโหวต, โหวตของคนนี้)
-// POST  {id, choice:'a'|'b'} → โหวตคู่นี้ (ได้คนละ 1 ครั้งต่อคู่ และโหวตได้เฉพาะคู่ที่พร้อมและยังไม่จบ)
-// ผู้ชนะตั้งได้เฉพาะแอดมินที่ api/admin.js (event_bracket) — endpoint นี้ไม่มีทางเปลี่ยนผู้ชนะ
-// ใช้ SUPABASE_SECRET_KEY (ตารางเปิด RLS ไว้โดยไม่มี policy)
-
 import { createHash } from 'node:crypto';
 import { clientIp } from './_login-limit.js';
 import { resolveBracket } from './_bracket.js';
@@ -32,12 +25,14 @@ export default async function handler(req, res) {
   const voterHash = createHash('sha256').update(`${clientIp(req)}|${SUPABASE_SECRET_KEY}`).digest('hex');
 
   async function loadBracket() {
-    const [mr, vr] = await Promise.all([
+    const [mr, vr, cr] = await Promise.all([
       sb('event_bracket?select=id,round,a_uid,b_uid,winner_uid&order=id'),
       sb('event_votes?select=match_id,choice,voter_hash'),
+      sb('event_config?id=eq.1&select=bracket_visible'),
     ]);
     if (!mr.ok || !vr.ok) return null;
-    return { rows: await mr.json(), votes: await vr.json() };
+    const cfg = cr.ok ? (await cr.json())[0] : null;
+    return { rows: await mr.json(), votes: await vr.json(), visible: cfg?.bracket_visible === true };
   }
 
   try {
@@ -51,7 +46,7 @@ export default async function handler(req, res) {
         const my = mine.find((v) => v.voter_hash === voterHash);
         return { ...m, votes: { a, b }, myChoice: my ? my.choice : null };
       });
-      return res.status(200).json({ matches });
+      return res.status(200).json({ visible: data.visible, matches });
     }
 
     if (req.method === 'POST') {
@@ -67,6 +62,7 @@ export default async function handler(req, res) {
 
       const data = await loadBracket();
       if (!data) return res.status(502).json({ error: 'โหลดสายการแข่งขันไม่สำเร็จ' });
+      if (!data.visible) return res.status(403).json({ error: 'ยังไม่เปิดให้โหวต' });
       const m = resolveBracket(data.rows).find((x) => x.id === id);
       if (!m || !m.a || !m.b) return res.status(400).json({ error: 'คู่นี้ยังไม่พร้อมให้โหวต' });
       if (m.winner) return res.status(400).json({ error: 'คู่นี้จบแล้ว' });
