@@ -6,6 +6,8 @@
 // ค่า event (ชื่อ, เปิด/ปิด, Tier ขั้นต่ำ ฯลฯ) อ่านจากตาราง event_config ซึ่งแก้ได้ที่หน้า admin
 // ใช้ SUPABASE_SECRET_KEY (อ่าน/เขียนตารางได้โดยไม่ผ่าน RLS)
 
+import { clientIp } from './_login-limit.js';
+
 const TIERS = ['S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
 const EVENT_KEY = 'main'; // ต้องตรงกับ event_key ในตาราง event_signups
 
@@ -13,7 +15,7 @@ const EVENT_KEY = 'main'; // ต้องตรงกับ event_key ในต�
 const DEFAULT_CONFIG = {
   title: 'AVEN TIER Event',
   description: 'สมัครเข้าร่วม Event ของ AVEN TIER เฉพาะผู้เล่นที่มีอันดับในเว็บ',
-  is_open: true,
+  is_open: false, // default ปิดไว้ก่อน: ถ้าอ่าน event_config ไม่ได้หรือยังไม่ได้รัน SQL ห้ามเปิดรับสมัครเอง
   min_tier: 'D+',
   mode_name: null,
   closes_at: null,
@@ -26,6 +28,11 @@ const lastByKind = { lookup: new Map(), post: new Map() };
 function tooFast(kind, ip) {
   const m = lastByKind[kind];
   const now = Date.now();
+  if (m.size > 5000) {
+    const cutoff = now - LIMIT_MS[kind];
+    for (const [k, v] of m) if (v < cutoff) m.delete(k);
+    if (m.size > 5000) m.clear();
+  }
   const last = m.get(ip);
   if (last && now - last < LIMIT_MS[kind]) return true;
   m.set(ip, now);
@@ -107,7 +114,7 @@ export default async function handler(req, res) {
       },
     });
 
-  const ip = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+  const ip = clientIp(req);
 
   try {
     const cfg = await getConfig(sb);
@@ -179,6 +186,6 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ ok: true, name: r.player.name, uid: String(r.player.uid), tier: r.tier });
   } catch (e) {
-    return res.status(502).json({ error: 'เชื่อมต่อฐานข้อมูลไม่ได้: ' + e.message });
+    return res.status(502).json({ error: 'เชื่อมต่อฐานข้อมูลไม่ได้' });
   }
 }

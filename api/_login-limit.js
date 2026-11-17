@@ -1,12 +1,14 @@
 // จำกัดการลองรหัสแอดมิน: ผิดเกิน MAX_FAILS ครั้งใน WINDOW_MS จะถูกล็อกจนหมดช่วง
-// ใช้ IP ขวาสุดของ x-forwarded-for (Vercel ต่อท้ายเอง ผู้ส่งแก้ค่านี้ไม่ได้)
+// ใช้ x-vercel-forwarded-for (Vercel เป็นคนเขียนให้ ผู้ส่งแก้ไม่ได้) ก่อน แล้วค่อย x-forwarded-for ตัวแรก
 // shortcut: ตัวนับอยู่ใน memory ของแต่ละ instance, ถ้า Vercel เปิดหลาย instance การจำกัดจะหลวมลง, upgrade: เก็บตัวนับใน Supabase หรือ Upstash
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILS = 10;
 const fails = new Map();
 
 export function clientIp(req) {
-  const xff = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
+  const trusted = String(req.headers['x-vercel-forwarded-for'] || '').split(',')[0].trim();
+  if (trusted) return trusted;
+  const xff = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
   return xff || req.socket?.remoteAddress || 'unknown';
 }
 

@@ -4,6 +4,8 @@
 // ไม่ต้อง login แอดมิน แต่จำกัดการเรียกเข้มงวดกว่า api/freefire.js (ของแอดมิน) มาก
 // เพราะเปิดให้ใครก็เรียกได้ - กันไม่ให้โดนใช้โควตา FREEFIRE_API_KEY หมดจากการสแปม
 
+import { clientIp } from './_login-limit.js';
+
 const lastRequestByIp = new Map();
 const lastRequestByUid = new Map();
 const RATE_LIMIT_PER_IP_MS = 4000;   // 1 IP ห้ามยิงถี่กว่า 4 วินาที
@@ -21,13 +23,19 @@ export default async function handler(req, res) {
   if (!region || !uid) {
     return res.status(400).json({ error: 'Missing region or uid' });
   }
-  // uid ต้องเป็นตัวเลขเท่านั้น กันคนยิง payload แปลกๆ เข้ามา
-  if (!/^\d{5,15}$/.test(uid)) {
-    return res.status(400).json({ error: 'UID ไม่ถูกต้อง' });
+  // uid/region ต้องเป็นรูปแบบที่คาดหวัง กันคนยิง payload แปลกๆ เข้ามา
+  if (!/^\d{5,15}$/.test(String(uid)) || !/^[A-Za-z0-9_-]{1,20}$/.test(String(region))) {
+    return res.status(400).json({ error: 'UID หรือ region ไม่ถูกต้อง' });
   }
 
-  const ip = (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+  const ip = clientIp(req);
   const now = Date.now();
+  for (const [map, ttl] of [[lastRequestByIp, RATE_LIMIT_PER_IP_MS], [lastRequestByUid, RATE_LIMIT_PER_UID_MS]]) {
+    if (map.size <= 5000) continue;
+    const cutoff = now - ttl;
+    for (const [k, v] of map) if (v < cutoff) map.delete(k);
+    if (map.size > 5000) map.clear();
+  }
 
   const lastIp = lastRequestByIp.get(ip);
   if (lastIp && now - lastIp < RATE_LIMIT_PER_IP_MS) {
@@ -69,7 +77,6 @@ export default async function handler(req, res) {
     // คืนกลับแค่ชื่อกับ UID เท่านั้น ไม่คืนข้อมูลอื่น (เลเวล, แรงค์เกม, กิลด์ ฯลฯ)
     return res.status(200).json({ nickname, uid });
   } catch (e) {
-    const msg = e.name === 'AbortError' ? 'Free Fire API ตอบช้าเกินไป' : e.message;
-    return res.status(502).json({ error: msg });
+    return res.status(502).json({ error: e.name === 'AbortError' ? 'Free Fire API ตอบช้าเกินไป' : 'เชื่อมต่อ Free Fire API ไม่สำเร็จ' });
   }
 }

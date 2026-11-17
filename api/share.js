@@ -57,6 +57,8 @@ export default async function handler(req, res) {
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  // rewrite เลือกตาม User-Agent -> ต้องบอก CDN ให้แยก cache ตาม UA ด้วย
+  res.setHeader('Vary', 'User-Agent');
 
   if (!/^\d{1,20}$/.test(uid)) {
     return res.status(200).send(page(fallback));

@@ -680,7 +680,8 @@ function switchTab(name, el){
 
 // TIER GRID
 function buildTierGrid(selected=''){
-  document.getElementById('tierGrid').innerHTML=TIERS.map(t=>`
+  const tiers = ROLE==='tester' ? TIERS.slice(TIERS.indexOf('C+')) : TIERS;
+  document.getElementById('tierGrid').innerHTML=tiers.map(t=>`
     <div class="tier-opt${t===selected?' selected':''}" onclick="selectTier('${t}')">${t}</div>
   `).join('');
   document.getElementById('f_tier').value=selected;

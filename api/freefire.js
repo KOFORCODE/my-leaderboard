@@ -3,15 +3,14 @@
 // ใช้ FREEFIRE_API_KEY จาก Environment Variable เท่านั้น ไม่ปรากฏในโค้ด client
 // รับทั้งรหัส ADMIN_PW และ TESTER_PW (การค้นหาไม่ได้เขียนข้อมูลลงฐานข้อมูล)
 
-import { timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual, createHash } from 'node:crypto';
 import { isLocked, recordFail } from './_login-limit.js';
 
 function safeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
-  const ba = Buffer.from(a);
-  const bb = Buffer.from(b);
-  if (ba.length !== bb.length) return false;
-  return timingSafeEqual(ba, bb);
+  const ha = createHash('sha256').update(a).digest();
+  const hb = createHash('sha256').update(b).digest();
+  return timingSafeEqual(ha, hb);
 }
 
 // rate limit แบบง่าย: กัน UID เดิมถูกยิงถี่เกินไปภายใน function instance เดียวกัน
@@ -46,8 +45,16 @@ export default async function handler(req, res) {
   if (!region || !uid) {
     return res.status(400).json({ error: 'Missing region or uid' });
   }
+  if (!/^\d{5,15}$/.test(String(uid)) || !/^[A-Za-z0-9_-]{1,20}$/.test(String(region))) {
+    return res.status(400).json({ error: 'UID หรือ region ไม่ถูกต้อง' });
+  }
 
   const now = Date.now();
+  if (lastRequestByUid.size > 5000) {
+    const cutoff = now - RATE_LIMIT_MS;
+    for (const [k, v] of lastRequestByUid) if (v < cutoff) lastRequestByUid.delete(k);
+    if (lastRequestByUid.size > 5000) lastRequestByUid.clear();
+  }
   const last = lastRequestByUid.get(uid);
   if (last && now - last < RATE_LIMIT_MS) {
     return res.status(429).json({ error: 'ค้น UID นี้ถี่เกินไป รอสักครู่แล้วลองใหม่' });
@@ -73,7 +80,6 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
     return res.send(text || '{}');
   } catch (e) {
-    const msg = e.name === 'AbortError' ? 'Free Fire API ตอบช้าเกินไป' : e.message;
-    return res.status(502).json({ error: msg });
+    return res.status(502).json({ error: e.name === 'AbortError' ? 'Free Fire API ตอบช้าเกินไป' : 'เชื่อมต่อ Free Fire API ไม่สำเร็จ' });
   }
 }

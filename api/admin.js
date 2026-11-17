@@ -1,6 +1,6 @@
 
 
-import { timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual, createHash } from 'node:crypto';
 import { isLocked, recordFail } from './_login-limit.js';
 
 const TIERS = ['S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
@@ -26,20 +26,22 @@ const ACCESS = {
     players: ['GET', 'POST', 'PATCH'],
     player_tiers: ['GET', 'POST', 'PATCH'],
     site_settings: ['GET'],
-    event_signups: ['GET'],
     event_config: ['GET'],
     event_bracket: ['GET'],
-    event_votes: ['GET'],
   },
 };
 
+// แฮชก่อนเทียบเพื่อไม่ให้ความยาวของรหัสหลุดทาง timing และเทียบด้วยความยาวคงที่เสมอ
 function safeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
-  const ba = Buffer.from(a);
-  const bb = Buffer.from(b);
-  if (ba.length !== bb.length) return false;
-  return timingSafeEqual(ba, bb);
+  const ha = createHash('sha256').update(a).digest();
+  const hb = createHash('sha256').update(b).digest();
+  return timingSafeEqual(ha, hb);
 }
+
+// คอลัมน์/ฟิลเตอร์ที่ tester เห็นได้ (ห้าม discord_id และข้อมูลส่วนตัวอื่น)
+const TESTER_PLAYER_SELECT = 'id,name,avatar,region,badge,uid,cool_star_until';
+const TESTER_PLAYER_QUERY_KEYS = ['id', 'uid', 'name', 'region', 'order', 'limit', 'select'];
 
 // ---------- path ----------
 // รับเฉพาะ "ชื่อตาราง" หรือ "ชื่อตาราง?query" ที่อยู่ในรายการอนุญาต
@@ -152,6 +154,12 @@ function validateBody(table, method, body, role) {
     if (err) return err;
   }
 
+  // tester ให้ Tier ได้สูงสุด C+ (ด่านจริงฝั่ง server แม้ UI ถูกเลี่ยง)
+  if (role === 'tester' && table === 'player_tiers' && body.tier_type !== undefined &&
+      TIERS.indexOf(body.tier_type) < TIERS.indexOf('C+')) {
+    return 'บัญชี tester ให้ Tier ได้สูงสุด C+';
+  }
+
   // tester: แก้ผู้เล่นได้เฉพาะการเพิ่มคูลดาว (PATCH cool_star_until) ตั้ง badge/รูป/คูลดาวตอนสร้างไม่ได้
   if (role === 'tester' && table === 'players') {
     if (method === 'PATCH') {
@@ -204,7 +212,8 @@ export default async function handler(req, res) {
   if (!parsed) {
     return res.status(400).json({ error: 'path ไม่ถูกต้อง' });
   }
-  const { table, query } = parsed;
+  const { table } = parsed;
+  let { query } = parsed;
 
   // ตรวจสิทธิ์ตาม role + ตาราง + method
   const allowedMethods = ACCESS[role][table] || [];
@@ -220,6 +229,17 @@ export default async function handler(req, res) {
   if (method === 'GET') {
     if (!/^[A-Za-z0-9_=&.,*()\-]{0,300}$/.test(query)) {
       return res.status(400).json({ error: 'query ไม่ถูกต้อง' });
+    }
+    if (role === 'tester' && table === 'players') {
+      // กัน tester ใช้ฟิลเตอร์เป็น oracle เดาค่า discord_id และบังคับ select ให้ปลอดภัย
+      const parts = query.split('&').filter(Boolean);
+      for (const part of parts) {
+        const key = part.split('=')[0];
+        if (!TESTER_PLAYER_QUERY_KEYS.includes(key)) {
+          return res.status(400).json({ error: 'query นี้ไม่ได้รับอนุญาตสำหรับบัญชี tester' });
+        }
+      }
+      query = parts.filter((p) => !p.startsWith('select=')).concat('select=' + TESTER_PLAYER_SELECT).join('&');
     }
   } else if (method === 'POST') {
     if (query) return res.status(400).json({ error: 'POST ห้ามมี query' });
@@ -267,6 +287,6 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
     return res.send(text || '{}');
   } catch (e) {
-    return res.status(502).json({ error: 'Supabase request failed: ' + e.message });
+    return res.status(502).json({ error: 'เชื่อมต่อฐานข้อมูลไม่สำเร็จ' });
   }
 }

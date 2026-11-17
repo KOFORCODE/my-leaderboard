@@ -2,6 +2,10 @@ import { createHash } from 'node:crypto';
 import { clientIp } from './_login-limit.js';
 import { resolveBracket } from './_bracket.js';
 
+// กัน spam โหวต (unique constraint กันโหวตซ้ำอยู่แล้ว แต่ยังยิงถี่ได้)
+const lastVoteAt = new Map();
+const VOTE_LIMIT_MS = 1500;
+
 export default async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
@@ -60,6 +64,16 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'ข้อมูลโหวตไม่ถูกต้อง' });
       }
 
+      const now = Date.now();
+      if (lastVoteAt.size > 5000) {
+        for (const [k, v] of lastVoteAt) if (now - v > VOTE_LIMIT_MS) lastVoteAt.delete(k);
+        if (lastVoteAt.size > 5000) lastVoteAt.clear();
+      }
+      const ip = clientIp(req);
+      const last = lastVoteAt.get(ip);
+      if (last && now - last < VOTE_LIMIT_MS) return res.status(429).json({ error: 'โหวตถี่เกินไป รอสักครู่' });
+      lastVoteAt.set(ip, now);
+
       const data = await loadBracket();
       if (!data) return res.status(502).json({ error: 'โหลดสายการแข่งขันไม่สำเร็จ' });
       if (!data.visible) return res.status(403).json({ error: 'ยังไม่เปิดให้โหวต' });
@@ -80,6 +94,6 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (e) {
-    return res.status(502).json({ error: e.message });
+    return res.status(502).json({ error: 'เชื่อมต่อฐานข้อมูลไม่สำเร็จ' });
   }
 }
