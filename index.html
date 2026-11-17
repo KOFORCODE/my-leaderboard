@@ -741,7 +741,7 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 const SUPABASE_URL = 'https://qfdtnfhcdxucckxakrgu.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_XGA4PQ3GY1LpEmSSRTyONg_2ogqR06G';
 
-const MAX_ROWS = 100; // ตารางแสดงสูงสุด 100 อันดับ
+const MAX_ROWS = 50; // ตารางแสดงสูงสุด 50 อันดับ
 const TIER_ORDER = ['S','A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F'];
 const TIER_CLASS = {'S':'t-S','A+':'t-Ap','A':'t-A','A-':'t-Am','B+':'t-Bp','B':'t-B','B-':'t-Bm','C+':'t-Cp','C':'t-C','C-':'t-Cm','D+':'t-Dp','D':'t-D','D-':'t-Dm','F':'t-F'};
 const TIER_SCORE = {'S':100,'A+':85,'A':75,'A-':65,'B+':54,'B':46,'B-':38,'C+':30,'C':25,'C-':20,'D+':16,'D':13,'D-':10,'F':0};
@@ -1027,7 +1027,7 @@ function render(){
       // คะแนนเท่ากัน: ใครได้ tier แถวแรกก่อน (id น้อยกว่า) อยู่บนกว่า คนที่เพิ่มทีหลังจึงเป็นรอง
       return (firstTierId[a.id]??0)-(firstTierId[b.id]??0);
     });
-    // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก อันดับที่ 101 ขึ้นไปไม่แสดงในตารางและแท่น (ตัวเลขผู้เล่นใช้จำนวนจริง)
+    // ตัดให้เหลือแค่ MAX_ROWS อันดับแรก อันดับที่ 51 ขึ้นไปไม่แสดงในตารางและแท่น (ตัวเลขผู้เล่นใช้จำนวนจริง)
     list.splice(MAX_ROWS);
 
     document.getElementById('tierHeader').textContent='TIERS';
