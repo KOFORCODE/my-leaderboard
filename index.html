@@ -67,11 +67,6 @@ nav{background:var(--bg1);border-bottom:1px solid var(--border);height:64px;disp
 .tab-icon:empty{display:none}
 .tab-icon img{width:20px;height:20px;object-fit:contain;border-radius:3px}
 
-/* SERVER BADGE */
-.server-info{display:flex;align-items:center;gap:8px;margin-left:auto;padding:0 1rem}
-.server-ip-badge{background:var(--bg2);border:1px solid var(--border2);border-radius:7px;padding:5px 11px;font-family:var(--font-mono);font-size:.7rem;color:var(--text2);font-weight:500;display:flex;align-items:center;gap:6px}
-.server-ip-badge span{color:var(--text3)}
-
 /* MAIN */
 main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
 
@@ -252,7 +247,6 @@ main{max-width:1280px;margin:0 auto;padding:1.25rem 1.5rem 4rem}
   #discordLink{display:block;padding:6px 4px;font-size:0.68rem}
   .search-wrap input{width:120px;box-sizing:border-box;padding-right:34px}
   main{padding-left:1rem;padding-right:1rem}
-  .server-info{display:none!important}
 }
 
 /* RIPPLE */
@@ -536,10 +530,6 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 
 <div style="display:flex;align-items:stretch;background:var(--bg1);border-bottom:1px solid var(--border)">
   <div class="tabs-bar" id="tabsBar" style="flex:1;border-bottom:none"></div>
-  <div class="server-info" id="serverInfo" style="display:none">
-    <div class="server-ip-badge">ℹ️ Information</div>
-    <div class="server-ip-badge"><span>SERVER IP</span> comboo.net</div>
-  </div>
 </div>
 
 <section class="banner" id="banner">
@@ -586,7 +576,7 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 </main>
 
 <footer class="site-foot">
-  <b><span>AVEN</span> TIER</b><span class="dot">·</span>Free Fire Tier List<span class="dot">·</span>comboo.net
+  <b><span>AVEN</span> TIER</b><span class="dot">·</span>Free Fire Tier List
 </footer>
 
 <button type="button" class="to-top" id="toTop" aria-label="กลับขึ้นบน" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
@@ -803,7 +793,6 @@ async function apiRpc(fn, ms=8000){
 async function load(){
   // แสดง tab Overall ทันทีก่อน API ตอบ ให้กดได้เลย
   document.getElementById('tabsBar').innerHTML=`<button class="tab-btn active" onclick="setMode('overall')">Overall</button>`;
-  document.getElementById('serverInfo').style.display='flex';
 
   try{
     // ลองยิง request เดียว (RPC รวม modes+players+player_tiers) ก่อน ลด round-trip จาก 3 เหลือ 1
@@ -873,7 +862,6 @@ function renderTabs(){
     </button>`;
   }).join('');
   document.getElementById('tabsBar').innerHTML=overallBtn+modeBtns;
-  document.getElementById('serverInfo').style.display='flex';
 }
 
 function setMode(id){activeMode=id;renderTabs();render()}
