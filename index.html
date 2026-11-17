@@ -661,20 +661,36 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
 .br-champ .lbl{font-family:var(--font-display);font-size:.68rem;letter-spacing:.2em;color:var(--text3);text-transform:uppercase}
 .br-champ .name{font-family:var(--font-display);font-size:1.2rem;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:.2rem}
 @media (max-width:768px){
-  .br-scroll{overflow:visible;padding:1.2rem .8rem}
+  /* มือถือ: แบ่งเป็นรอบ รอบแรก → รองชนะเลิศ → ชิงชนะเลิศ (ไม่ต้องปาดซ้ายขวา) */
+  .br-scroll{overflow:visible;padding:1.1rem .8rem}
   .br-bracket{min-width:0;height:auto;flex-direction:column;align-items:stretch;justify-content:flex-start}
+  .br-bracket{display:flex;row-gap:0}
   .br-side{display:contents}
-  .br-col{flex:none;justify-content:flex-start;align-items:center;gap:10px;margin-bottom:18px}
-  .br-col-label{position:static;text-align:left;width:100%;max-width:320px;margin-bottom:-2px}
-  .br-match,.br-match.big,.br-final-box{width:100%;max-width:320px}
-  .br-slot,.br-match.big .br-slot{height:40px;font-size:.85rem}
+  /* แต่ละคอลัมน์ = กลุ่มแมตช์ในรอบนั้น */
+  .br-col{flex:none;justify-content:flex-start;align-items:stretch;gap:8px;margin:0 0 10px;padding:0}
+  .br-col-label{position:static;text-align:left;width:100%;margin:0 0 2px;padding-left:2px;font-size:.72rem;color:var(--accent)}
+  /* ซ่อนหัวข้อรอบที่ซ้ำ (คอลัมน์ฝั่งขวา) และซ่อนป้าย FINAL ซ้อน */
+  .br-side.right .qf .br-col-label,
+  .br-side.right .sf .br-col-label,
+  .br-final-title{display:none}
+  /* แมตช์เต็มความกว้างจอ อ่านง่าย นิ้วกดสะดวก */
+  .br-match,.br-match.big,.br-final-box{width:100%;max-width:none}
+  .br-slot,.br-match.big .br-slot{height:46px;font-size:.9rem;padding:0 12px}
+  .br-slot .s{font-size:.75rem}
+  .br-vote{padding:6px 12px;font-size:.72rem}
+  /* ไม่ต้องมีเส้นเชื่อมบนมือถือ */
   .br-side .br-col .br-match::after,.br-side .br-col .br-match::before{display:none}
+  .br-final-box .br-match{border-radius:10px}
+  /* เปิดรอบใหม่ด้วยเส้นคั่น */
+  .br-side.left .sf,
+  .br-final-col{border-top:1px solid var(--border);padding-top:12px}
+  /* ลำดับรอบ: รอบแรก(ซ้าย+ขวา) → รองฯ(ซ้าย+ขวา) → ชิง */
   .br-side.left .qf{order:1}
   .br-side.right .qf{order:2}
   .br-side.left .sf{order:3}
   .br-side.right .sf{order:4}
-  .br-final-col{order:5;flex:none;justify-content:flex-start;align-items:center}
-  .br-champ{margin-top:0;margin-bottom:6px}
+  .br-final-col{order:5;flex:none;justify-content:flex-start;align-items:stretch;margin-bottom:0}
+  .br-champ{margin-top:12px;margin-bottom:6px}
 }
 .br-summary{cursor:pointer;list-style:none;align-items:center}
 .br-summary::-webkit-details-marker{display:none}
