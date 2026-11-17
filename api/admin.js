@@ -164,6 +164,9 @@ function validateBody(table, method, body, role) {
 }
 
 export default async function handler(req, res) {
+  // ต้องไม่มี cache ทุกกรณี (รวม 401/429/500) ไม่ให้ CDN แคชผลลัพธ์ที่มีข้อมูลภายใน
+  res.setHeader('Cache-Control', 'no-store');
+
   const ADMIN_PW = process.env.ADMIN_PW;
   const TESTER_PW = process.env.TESTER_PW; // ไม่บังคับ: ถ้าไม่ตั้งก็ไม่มีบัญชี tester
   const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -193,7 +196,6 @@ export default async function handler(req, res) {
 
   // ให้ client รู้ว่าเป็น role อะไร (ใช้แสดง UI เท่านั้น ความปลอดภัยจริงอยู่ที่ด่านด้านล่าง)
   res.setHeader('x-role', role);
-  res.setHeader('Cache-Control', 'no-store');
 
   const method = req.method;
 

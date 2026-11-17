@@ -48,7 +48,7 @@ export default async function handler(req, res) {
     const r = await fetch(url, {
       headers: {
         'x-api-key': FREEFIRE_API_KEY,
-        'User-Agent': 'AVENTIER-Leaderboard/1.0 (+https://my-leaderboard-five.vercel.app)',
+        'User-Agent': 'AVENTIER-Leaderboard/1.0 (+https://aventier.vercel.app)',
       },
       signal: ctrl.signal,
     });

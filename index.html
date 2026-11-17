@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AVEN TIER — Tier List</title>
 <meta name="description" content="AVEN TIER — ดูอันดับ Free Fire Tier List แนวตั้งของผู้เล่นทุกโหมด ค้นหาผู้เล่นด้วยชื่อหรือ UID และดู Tier ล่าสุด">
-<link rel="canonical" href="https://my-leaderboard-five.vercel.app/">
+<link rel="canonical" href="https://aventier.vercel.app/">
 <meta property="og:title" content="AVEN TIER — Tier List">
 <meta property="og:description" content="🏆 Free Fire Tier List Ranking — ดูอันดับแนวตั้งของผู้เล่น AVEN TIER">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://my-leaderboard-five.vercel.app">
+<meta property="og:url" content="https://aventier.vercel.app">
 <meta property="og:image" content="https://i.postimg.cc/pX75NqQp/333407178686439927.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="AVEN TIER — Tier List">
@@ -808,7 +808,12 @@ async function load(){
   try{
     // ลองยิง request เดียว (RPC รวม modes+players+player_tiers) ก่อน ลด round-trip จาก 3 เหลือ 1
     try{
-      const data = await apiRpc('get_leaderboard_data');
+      let data;
+      try{
+        data = await apiRpc('get_leaderboard_public');
+      }catch(_){
+        data = await apiRpc('get_leaderboard_data');
+      }
       modes = data.modes || [];
       players = data.players || [];
       tiers = data.player_tiers || [];
@@ -818,7 +823,7 @@ async function load(){
       console.warn('[load] RPC ล้มเหลว, fallback เป็น 3 requests:', rpcErr.message);
       const [modesData,playersData,tiersData]=await Promise.all([
         apiWithTimeout('modes?order=sort_order'),
-        apiWithTimeout('players?order=name'),
+        apiWithTimeout('players?select=id,name,avatar,region,badge,uid,created_at&order=name'),
         apiWithTimeout('player_tiers?select=*')
       ]);
       modes=modesData;

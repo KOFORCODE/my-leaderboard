@@ -6,7 +6,7 @@
 
 const SUPABASE_URL = 'https://qfdtnfhcdxucckxakrgu.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_XGA4PQ3GY1LpEmSSRTyONg_2ogqR06G';
-const SITE = 'https://my-leaderboard-five.vercel.app';
+const SITE = 'https://aventier.vercel.app';
 const DEFAULT_IMAGE = 'https://i.postimg.cc/pX75NqQp/333407178686439927.jpg';
 const TIER_SCORE = {'S':100,'A+':85,'A':75,'A-':65,'B+':54,'B':46,'B-':38,'C+':30,'C':25,'C-':20,'D+':16,'D':13,'D-':10,'F':0};
 
