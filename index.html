@@ -713,6 +713,11 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
         <button type="button" class="ev-btn" id="evCheck" onclick="checkEventUid()">ตรวจสอบ</button>
       </div>
       <div class="ev-hint">กรอก UID เพื่อตรวจสอบก่อนยืนยันการสมัคร</div>
+      <div id="evDiscordWrap" hidden style="margin-top:14px">
+        <label class="ev-label" for="evDiscord">Discord (ID หรือชื่อผู้ใช้)</label>
+        <input id="evDiscord" class="ev-input" maxlength="64" placeholder="เช่น yourname หรือ 123456789012345678" autocomplete="off" style="width:100%;box-sizing:border-box">
+        <div class="ev-hint">ไว้ให้ทีมงานติดต่อกลับ</div>
+      </div>
     </div>
 
     <div class="ev-step" id="evStep2" hidden>
@@ -1788,6 +1793,7 @@ function openSignup(mode, e){
   if(e) e.preventDefault();
   signupMode = mode;
   document.getElementById('evConfirm').textContent = SIGNUP_CONFIRM[mode];
+  document.getElementById('evDiscordWrap').hidden = mode !== 'tester';
   const bd=document.getElementById('eventBackdrop');
   bd.style.display='flex';
   requestAnimationFrame(()=>bd.classList.add('show'));
@@ -1822,6 +1828,7 @@ function showEventMsg(text){
 function resetEventView(){
   eventPreview=null;
   document.getElementById('evUid').value='';
+  document.getElementById('evDiscord').value='';
   setEl('evStep1',true); setEl('evStep2',false); setEl('evDone',false);
   showEventMsg('');
 }
@@ -1855,6 +1862,10 @@ async function loadEventStatus(){
 async function checkEventUid(){
   const uid=document.getElementById('evUid').value.trim();
   if(!/^\d{5,20}$/.test(uid)){ showEventMsg('UID ต้องเป็นตัวเลข 5 ถึง 20 หลัก'); return; }
+  if(signupMode==='tester'){
+    const discord=document.getElementById('evDiscord').value.trim();
+    if(discord.length<2||discord.length>64){ showEventMsg('ใส่ Discord ID หรือชื่อผู้ใช้ 2–64 ตัวอักษร'); return; }
+  }
   const btn=document.getElementById('evCheck');
   btn.disabled=true; btn.textContent='กำลังตรวจ...';
   showEventMsg('');
@@ -1899,7 +1910,7 @@ async function confirmEvent(){
     const r=await fetch(signupUrl(),{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({uid:eventPreview.uid})
+      body:JSON.stringify({uid:eventPreview.uid, discord:signupMode==='tester'?document.getElementById('evDiscord').value.trim():''})
     });
     const d=await r.json().catch(()=>({}));
     if(r.ok&&d.ok){

@@ -129,6 +129,12 @@ export default async function handler(req, res) {
     const uid = String(body?.uid ?? '').trim();
     if (!/^\d{5,20}$/.test(uid)) return res.status(400).json({ error: 'UID ต้องเป็นตัวเลข 5 ถึง 20 หลัก' });
 
+    // Discord ID หรือชื่อผู้ใช้ ไว้ให้ทีมงานติดต่อกลับ
+    const discord = String(body?.discord ?? '').trim();
+    if (discord.length < 2 || discord.length > 64 || /[\u0000-\u001f\u007f]/.test(discord)) {
+      return res.status(400).json({ error: 'ใส่ Discord ID หรือชื่อผู้ใช้ 2–64 ตัวอักษร' });
+    }
+
     const r = await inspectUid(sb, uid);
     if (r.error) return res.status(r.status).json({ error: r.error });
     if (r.signed) return res.status(409).json({ error: 'UID นี้สมัคร Tester ไปแล้ว' });
@@ -142,10 +148,11 @@ export default async function handler(req, res) {
         player_id: String(r.player.id),
         uid: String(r.player.uid),
         name: r.player.name,
+        discord,
       }),
     });
     if (ins.status === 409) return res.status(409).json({ error: 'UID นี้สมัคร Tester ไปแล้ว' });
-    if (!ins.ok) return res.status(502).json({ error: 'บันทึกการสมัครไม่สำเร็จ' });
+    if (!ins.ok) return res.status(502).json({ error: 'บันทึกการสมัครไม่สำเร็จ (อย่าลืมรัน sql/event_signups.sql เพื่อเพิ่มคอลัมน์ discord)' });
 
     // สำรองข้อมูลลง Google Sheet (ถ้าตั้ง SHEET_WEBHOOK_URL ไว้) — พลาดแล้วไม่ทำให้สมัครล้มเหลว
     await appendSignupToSheet({
@@ -153,6 +160,7 @@ export default async function handler(req, res) {
       name: r.player.name,
       uid: String(r.player.uid),
       tier: r.tier,
+      discord,
       created_at: new Date().toISOString(),
     });
 

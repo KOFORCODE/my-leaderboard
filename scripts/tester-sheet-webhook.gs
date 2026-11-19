@@ -36,11 +36,17 @@ function doPost(e) {
     var sh = ss.getSheetByName(SHEET_NAME);
     if (!sh) sh = ss.insertSheet(SHEET_NAME);
 
-    // ใส่หัวตารางให้ครั้งแรก
+    // ใส่หัวตารางให้ครั้งแรก และอัปเดตหัวตารางถ้ายังไม่มีคอลัมน์ Discord
+    var headers = ['วันที่สมัคร', 'ชื่อ', 'UID', 'Tier', 'Discord'];
     if (sh.getLastRow() === 0) {
-      sh.appendRow(['วันที่สมัคร', 'ชื่อ', 'UID', 'Tier']);
-      sh.getRange(1, 1, 1, 4).setFontWeight('bold');
+      sh.appendRow(headers);
+      sh.getRange(1, 1, 1, headers.length).setFontWeight('bold');
       sh.setFrozenRows(1);
+    } else {
+      var current = sh.getRange(1, 1, 1, headers.length).getValues()[0];
+      if (current.join('|') !== headers.join('|')) {
+        sh.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
+      }
     }
 
     var tz = Session.getScriptTimeZone();
@@ -49,7 +55,8 @@ function doPost(e) {
       Utilities.formatDate(when, tz, 'dd/MM/yyyy HH:mm'),
       body.name || '',
       body.uid || '',
-      body.tier || ''
+      body.tier || '',
+      body.discord || ''
     ]);
 
     return json({ ok: true });
