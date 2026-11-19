@@ -6,7 +6,11 @@
  *    (ไม่ต้องสร้างแท็บเอง สคริปต์จะสร้างแท็บชื่อ "Tester" ให้)
  * 2. ใน Sheet ไปที่ Extensions > Apps Script
  * 3. ลบโค้ดเดิมทั้งหมด แล้ววางโค้ดนี้ทั้งไฟล์
- * 4. แก้ SECRET ด้านล่างเป็นรหัสลับที่ตั้งเอง (เช่น สุ่มตัวอักษรยาว ๆ)
+ * 4. ตั้งรหัสลับใน Apps Script (ไม่เก็บในโค้ด):
+ *    กดไอคอนเฟือง ⚙️ Project Settings > Script Properties > Add script property
+ *    - Property: SECRET
+ *    - Value: รหัสลับที่คุณตั้งเอง (เช่น สุ่มตัวอักษรยาว ๆ)
+ *    กด Save
  * 5. กด Deploy > New deployment > เลือก type "Web app"
  *    - Description: tester signup
  *    - Execute as: Me
@@ -15,14 +19,16 @@
  * 6. Copy "Web app URL" (ลงท้ายด้วย /exec)
  * 7. ไปที่ Vercel > Project > Settings > Environment Variables เพิ่ม:
  *    SHEET_WEBHOOK_URL    = <URL ที่ copy มา>
- *    SHEET_WEBHOOK_SECRET = <SECRET เดียวกันกับข้อ 4>
+ *    SHEET_WEBHOOK_SECRET = <ค่า SECRET เดียวกันกับข้อ 4>
  *    แล้ว Redeploy
  *
  * ถ้าแก้โค้ดภายหลัง ต้อง Deploy > Manage deployments > Edit > Version: New version > Deploy
  */
 
 var SHEET_NAME = 'Tester';
-var SECRET = 'เปลี่ยนรหัสตรงนี้เป็นรหัสลับของคุณ';
+// อ่านรหัสลับจาก Script Properties (ชื่อ SECRET) แทนการเขียนในโค้ด
+// ถ้าไม่ได้ตั้งค่าไว้ จะเป็นค่าว่าง = ไม่ตรวจรหัส
+var SECRET = PropertiesService.getScriptProperties().getProperty('SECRET') || '';
 
 function doPost(e) {
   try {
