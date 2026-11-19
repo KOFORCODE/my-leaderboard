@@ -129,10 +129,10 @@ export default async function handler(req, res) {
     const uid = String(body?.uid ?? '').trim();
     if (!/^\d{5,20}$/.test(uid)) return res.status(400).json({ error: 'UID ต้องเป็นตัวเลข 5 ถึง 20 หลัก' });
 
-    // Discord ID หรือชื่อผู้ใช้ ไว้ให้ทีมงานติดต่อกลับ
+    // ชื่อ Discord ไว้ให้ทีมงานติดต่อกลับ
     const discord = String(body?.discord ?? '').trim();
     if (discord.length < 2 || discord.length > 64 || /[\u0000-\u001f\u007f]/.test(discord)) {
-      return res.status(400).json({ error: 'ใส่ Discord ID หรือชื่อผู้ใช้ 2–64 ตัวอักษร' });
+      return res.status(400).json({ error: 'ใส่ชื่อ Discord 2–64 ตัวอักษร' });
     }
 
     const r = await inspectUid(sb, uid);

@@ -8,7 +8,7 @@ create table if not exists public.event_signups (
   player_id text not null,
   uid text not null,
   name text not null,
-  discord text,                              -- Discord ID/ชื่อผู้ใช้ (ใช้กับใบสมัคร Tester)
+  discord text,                              -- ชื่อ Discord (ใช้กับใบสมัคร Tester)
   created_at timestamptz not null default now(),
   unique (event_key, player_id)              -- 1 คนสมัครได้ 1 ครั้งต่อ event
 );

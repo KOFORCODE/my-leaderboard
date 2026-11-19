@@ -714,8 +714,8 @@ button.mc-share:disabled{opacity:.6;cursor:wait}
       </div>
       <div class="ev-hint">กรอก UID เพื่อตรวจสอบก่อนยืนยันการสมัคร</div>
       <div id="evDiscordWrap" hidden style="margin-top:14px">
-        <label class="ev-label" for="evDiscord">Discord (ID หรือชื่อผู้ใช้)</label>
-        <input id="evDiscord" class="ev-input" maxlength="64" placeholder="เช่น yourname หรือ 123456789012345678" autocomplete="off" style="width:100%;box-sizing:border-box">
+        <label class="ev-label" for="evDiscord">ชื่อ Discord</label>
+        <input id="evDiscord" class="ev-input" maxlength="64" placeholder="เช่น yourname" autocomplete="off" style="width:100%;box-sizing:border-box">
         <div class="ev-hint">ไว้ให้ทีมงานติดต่อกลับ</div>
       </div>
     </div>
@@ -1864,7 +1864,7 @@ async function checkEventUid(){
   if(!/^\d{5,20}$/.test(uid)){ showEventMsg('UID ต้องเป็นตัวเลข 5 ถึง 20 หลัก'); return; }
   if(signupMode==='tester'){
     const discord=document.getElementById('evDiscord').value.trim();
-    if(discord.length<2||discord.length>64){ showEventMsg('ใส่ Discord ID หรือชื่อผู้ใช้ 2–64 ตัวอักษร'); return; }
+    if(discord.length<2||discord.length>64){ showEventMsg('ใส่ชื่อ Discord 2–64 ตัวอักษร'); return; }
   }
   const btn=document.getElementById('evCheck');
   btn.disabled=true; btn.textContent='กำลังตรวจ...';

@@ -37,7 +37,7 @@ function doPost(e) {
     if (!sh) sh = ss.insertSheet(SHEET_NAME);
 
     // ใส่หัวตารางให้ครั้งแรก และอัปเดตหัวตารางถ้ายังไม่มีคอลัมน์ Discord
-    var headers = ['วันที่สมัคร', 'ชื่อ', 'UID', 'Tier', 'Discord'];
+    var headers = ['วันที่สมัคร', 'ชื่อ', 'UID', 'Tier', 'ชื่อ Discord'];
     if (sh.getLastRow() === 0) {
       sh.appendRow(headers);
       sh.getRange(1, 1, 1, headers.length).setFontWeight('bold');
