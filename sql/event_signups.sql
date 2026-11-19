@@ -1,4 +1,5 @@
 -- ระบบสมัคร Event: เก็บรายชื่อผู้เล่นที่สมัคร
+-- ใช้ร่วมกับระบบสมัคร Tester (event_key = 'tester') จึงไม่ต้องสร้างตารางเพิ่ม
 -- รันใน Supabase SQL Editor ครั้งเดียว
 
 create table if not exists public.event_signups (
@@ -17,3 +18,6 @@ alter table public.event_signups enable row level security;
 
 -- ดึงรายชื่อไปใส่ sheet "best" (รันใน SQL Editor แล้ว copy ผลลัพธ์):
 -- select name, uid, created_at from public.event_signups where event_key = 'main' order by created_at;
+--
+-- ใบสมัคร Tester (event_key = 'tester'):
+-- select name, uid, created_at from public.event_signups where event_key = 'tester' order by created_at;
