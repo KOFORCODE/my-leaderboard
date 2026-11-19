@@ -8,6 +8,7 @@
 // ใช้ SUPABASE_SECRET_KEY (อ่าน/เขียนตารางได้โดยไม่ผ่าน RLS)
 
 import { clientIp } from './_login-limit.js';
+import { appendSignupToSheet } from './_sheet.js';
 
 const TIERS = ['S', 'A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
 const EVENT_KEY = 'tester'; // ต้องตรงกับ event_key ในตาราง event_signups
@@ -145,6 +146,15 @@ export default async function handler(req, res) {
     });
     if (ins.status === 409) return res.status(409).json({ error: 'UID นี้สมัคร Tester ไปแล้ว' });
     if (!ins.ok) return res.status(502).json({ error: 'บันทึกการสมัครไม่สำเร็จ' });
+
+    // สำรองข้อมูลลง Google Sheet (ถ้าตั้ง SHEET_WEBHOOK_URL ไว้) — พลาดแล้วไม่ทำให้สมัครล้มเหลว
+    await appendSignupToSheet({
+      type: 'tester',
+      name: r.player.name,
+      uid: String(r.player.uid),
+      tier: r.tier,
+      created_at: new Date().toISOString(),
+    });
 
     return res.status(200).json({ ok: true, name: r.player.name, uid: String(r.player.uid), tier: r.tier });
   } catch (e) {
